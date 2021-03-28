@@ -29,6 +29,14 @@ class GameState {
     this.mixTubes()
   }
   
+  cheat() {
+    var n = new Tube(this.tubeHeight)
+    n.fillWithOneColor(0)
+    this.tubes.push(n)
+    this.numberOfTubes++;
+    this.numberOfExtraTubes++;
+  }
+  
   initTubes() {
     console.log('initTubes()')
     // gefüllte Röhren

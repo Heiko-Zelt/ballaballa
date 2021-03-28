@@ -173,6 +173,12 @@ document.addEventListener("DOMContentLoaded", function() {
     resetGameView()
   })
   
+  let cheatButton = document.getElementById("cheatButton")
+  cheatButton.addEventListener('click', function() {
+    gameState.cheat()
+    resetGameView()
+  })
+  
   let startForm = document.getElementById("startForm")
   startForm.addEventListener('submit', function(event) {
     console.log("form submit")
