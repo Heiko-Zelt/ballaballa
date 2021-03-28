@@ -3,7 +3,18 @@
 .ballGroup {
     /* fill: #888888; */
     stroke: white;
-    stroke-width: 4;
+    stroke-width: 2;
+}
+
+.balla {
+	vertical-align: middle;
+}
+
+.tubeTab {
+	padding: 0px;
+	margin: 1px;
+	border: 0px solid black;
+	border-collapse: collapse;
 }
 
 .tubeTab tr:first-child td {
