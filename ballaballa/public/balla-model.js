@@ -25,7 +25,8 @@ class GameState {
     console.log('GameState.newGame()')
     this.initTubes()
     this.randomizeBalls()
-    this.emptyExtraTubes()
+    //this.emptyExtraTubes()
+    this.mixTubes()
   }
   
   initTubes() {
@@ -45,6 +46,27 @@ class GameState {
       this.tubes[i] = new Tube(this.tubeHeight)
       this.tubes[i].fillWithOneColor(0)
     }
+  }
+  
+  /**
+   * vertauscht Röhren untereinander zufällig
+   */
+  mixTubes() {
+    console.log('mixTubes()')
+    for(var c = 0; c < 30; c++) {
+      var i = this.randomInt(this.numberOfTubes)
+      var j = this.randomInt(this.numberOfTubes)
+      this.swapTubes(i, j)
+    }  
+  }
+  
+  /**
+   * tauscht 2 Röhren
+   */
+  swapTubes(index1, index2) {
+    var tmp = this.tubes[index1]
+    this.tubes[index1] = this.tubes[index2]
+    this.tubes[index2] = tmp
   }
   
   /**
