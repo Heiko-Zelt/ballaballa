@@ -24,6 +24,73 @@ function newGame() {
   console.log('gameState: ' + JSON.stringify(gameState))
 }
 
+/**
+ * from: Spalten Index Geber
+ * to:   Spalten Index Empfaenger
+ */
+function move(from, to) {
+  // Ball oben nicht mehr anzeigen
+  var lifted = document.getElementById('lifted_' + from)
+  var className = 'ball' + gameState.tubes[from].colorOfHighestBall()
+  lifted.classList.remove(className)
+  lifted.classList.add('ball0')
+	    
+  //console.log('move from ' + from + ' to ' + to)
+
+  var donorCellId = 'cell_' + from + '_' + (gameState.tubes[from].fillLevel - 1)
+  color = gameState.moveBall(from, to)
+  var receiverCellId = 'cell_' + to + '_' + (gameState.tubes[to].fillLevel - 1)
+
+  /*
+  schwebt doch eh schon	        
+  var donorElement = document.getElementById(donorCellId)
+  donorElement.classList.remove('ball' + color)
+  donorElement.classList.add('ball0')
+  */
+          
+  // Ball einlochen
+  var receiverElement = document.getElementById(receiverCellId)
+  receiverElement.classList.remove('ball0')
+  receiverElement.classList.add('ball' + color)
+  
+  // globale Variable
+  donorIndex = null
+}
+
+function lift(from) {
+  // Ball oben anzeigen
+  var lifted = document.getElementById('lifted_' + from)
+  var className = 'ball' + gameState.tubes[from].colorOfHighestBall()
+  console.log('className=' + className)
+  lifted.classList.remove('ball0')
+  lifted.classList.add(className)
+	      
+  // Ball unten nicht mehr anzeigen
+  var hidden = document.getElementById('cell_' + from + '_' + (gameState.tubes[from].fillLevel - 1))
+  hidden.classList.remove(className)
+  hidden.classList.add('ball0')
+  
+  // globale Variable
+  donorIndex = from
+}
+
+function drop(from) {
+  // Ball oben nicht mehr anzeigen
+  var lifted = document.getElementById('lifted_' + from)
+  var className = 'ball' + gameState.tubes[from].colorOfHighestBall()
+  console.log('className=' + className)
+  lifted.classList.remove(className)
+  lifted.classList.add('ball0')
+	      
+  // Ball unten wieder anzeigen
+  var hidden = document.getElementById('cell_' + from + '_' + (gameState.tubes[from].fillLevel - 1))
+  hidden.classList.remove('ball0')
+  hidden.classList.add(className)
+  
+  // globale Variable
+  donorIndex = null
+}
+
 function resetGameView() {
   var board = document.getElementById("board")
   var cellTemplate = document.getElementById("cellTemplate")
@@ -45,42 +112,16 @@ function resetGameView() {
 	  //console.log('clicked column: ' + clickedCol)
 	  if(donorIndex == null) {
 	    if(!gameState.tubes[clickedCol].isEmpty()) {
-	      donorIndex = clickedCol
-	      
-	      // Ball oben anzeigen
-	      var lifted = document.getElementById('lifted_' + donorIndex)
-	      var className = 'ball' + gameState.tubes[donorIndex].colorOfHighestBall()
-	      console.log('className=' + className)
-	      lifted.classList.remove('ball0')
-	      lifted.classList.add(className)
-	      
-	      // Ball unten nicht mehr anzeigen
-	      var hidden = document.getElementById('cell_' + donorIndex + '_' + (gameState.tubes[donorIndex].fillLevel - 1))
-	      hidden.classList.remove(className)
-	      hidden.classList.add('ball0')	      
+          lift(clickedCol)
 	    }
 	  } else {
 	    if(gameState.isMoveAllowed(donorIndex, clickedCol)) {
-	      // Ball oben nicht mehr anzeigen
-	      var lifted = document.getElementById('lifted_' + donorIndex)
-	      var className = 'ball' + gameState.tubes[donorIndex].colorOfHighestBall()
-	      lifted.classList.remove(className)
-	      lifted.classList.add('ball0')
-	    
-	      var receiverIndex = clickedCol
-          //console.log('move from ' + donorIndex + ' to ' + receiverIndex)
-
-	      var donorCellId = 'cell_' + donorIndex + '_' + (gameState.tubes[donorIndex].fillLevel - 1)
-	      color = gameState.moveBall(donorIndex, receiverIndex)
-	      var receiverCellId = 'cell_' + receiverIndex + '_' + (gameState.tubes[receiverIndex].fillLevel - 1)
-	        
-          var donorElement = document.getElementById(donorCellId)
-          var receiverElement = document.getElementById(receiverCellId)
-          donorElement.classList.remove('ball' + color)
-          donorElement.classList.add('ball0')
-          receiverElement.classList.remove('ball0')
-          receiverElement.classList.add('ball' + color)
-          donorIndex = null
+	      move(donorIndex, clickedCol)
+        } else {
+          // Ball wieder runter
+          drop(donorIndex)
+          // dafür anderer Ball hoch
+          lift(clickedCol)
         }
 	  }
 	})
