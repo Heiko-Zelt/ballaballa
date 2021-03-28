@@ -5,12 +5,19 @@
     stroke: white;
     stroke-width: 4;
 }
-.tubeTab tr:not(:first-child) {
+
+.tubeTab tr:first-child td {
+	background-color: transparent;
+}
+
+.tubeTab tr:not(:first-child) td {
 	background-color: rgb(230, 230, 230);
 }
-.tubeTab tr:firstChild {
-	background-color: green;
+
+.tubeTab tr:last-child td {
+	border-radius: 0px 0px 20px 20px;
 }
+
 
 .ball0 {
 	stroke-opacity: 0;
