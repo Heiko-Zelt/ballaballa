@@ -138,4 +138,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // don't submit form and reload page
     event.preventDefault()
   })
+  
+  newGame()
+  resetGameView()
 })
