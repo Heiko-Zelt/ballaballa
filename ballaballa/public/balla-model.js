@@ -24,11 +24,15 @@ class GameState {
   newGame() {
     console.log('GameState.newGame()')
     this.initTubes()
-    this.randomizeBalls()
+    this.randomizeBallsMany()
     //this.emptyExtraTubes()
     this.mixTubes()
   }
   
+  /**
+   * adds an extra tube,
+   * which makes solving the puzzle much easier
+   */
   cheat() {
     var n = new Tube(this.tubeHeight)
     n.fillWithOneColor(0)
@@ -61,7 +65,7 @@ class GameState {
    */
   mixTubes() {
     console.log('mixTubes()')
-    for(var c = 0; c < 30; c++) {
+    for(var c = 0; c < this.numberOfTubes * 2; c++) {
       var i = this.randomInt(this.numberOfTubes)
       var j = this.randomInt(this.numberOfTubes)
       this.swapTubes(i, j)
@@ -78,7 +82,8 @@ class GameState {
   }
   
   /**
-   * plays Game backwards
+   * plays Game backwards with only a few moves.
+   * Warning! This leads to easy solvable puzzles.
    */
   randomizeBalls() {
     console.log('randomizeBalls()')
@@ -104,8 +109,91 @@ class GameState {
       this.moveBall(reverseDonor, reverseReceiver)
     }
     console.log('reverse moves: ' + i)
-    
-    /* Bullshit
+  }
+  
+  /**
+   * plays game backwards with many moves
+   */
+  randomizeBallsMany() {
+    var maxMoves = this.numberOfTubes * this.tubeHeight
+    var i;
+    for(i = 0; i < maxMoves; i++) {
+      var possibleMoves = this.allPossibleBackwardMoves()
+      console.log('i: ' + i + ', possibleMoves: ' + JSON.stringify(possibleMoves))
+      if(possibleMoves.length == 0) {
+        break
+      }
+      var catMoves = this.categorizeBackwardMoves(possibleMoves)
+      var move = this.selectMove(catMoves)
+      this.moveBall2(move)
+    }
+    console.log('finished with number of moves: ' + i)
+  }
+  
+  /**
+   * selects a good move if possible,
+   * otherwise a bad move
+   * (There must be at least one possible move)
+   */
+  selectMove(catMoves) {
+    var goodMoves = catMoves[0]
+    var badMoves = catMoves[1]
+    console.log('goodMoves: ', JSON.stringify(goodMoves))
+    console.log('badMoves: ', JSON.stringify(badMoves))
+    var move = (goodMoves.length != 0)?this.selectOneRandomly(goodMoves):this.selectOneRandomly(badMoves)
+    console.log('selected: ', JSON.stringify(move))
+    return move
+  } 
+  
+  /**
+   * liefert eine Liste mit allen möglichen Zügen,
+   * wenn das Spiel rückwärts gespielt wird.
+   */
+  allPossibleBackwardMoves() {
+    var allMoves = []
+    for(var from = 0; from < this.numberOfTubes; from++) {
+      if(this.tubes[from].isReverseDonorCandidate()) {
+        for(var to = 0; to < this.numberOfTubes; to++) {
+          if(this.tubes[to].isReverseReceiverCandidate()) {
+            if(from != to) {
+              allMoves.push(new Move(from, to))
+            }
+          }
+        }
+      }
+    }
+    return allMoves
+  }
+  
+  /**
+   * Teilt alle Rückwärts-Züge in Kategorien ein
+   */
+  categorizeBackwardMoves(allMoves) {
+    var goodMoves = []
+    var badMoves = []
+    allMoves.forEach(function(move) {
+      if(this.isGoodBackwardMove(move)) {
+        goodMoves.push(move)
+      } else {
+        badMoves.push(move)
+      }
+    }, this)
+    return [goodMoves, badMoves]
+  }
+  
+  /**
+   * sehr einfaches Kriterium
+   */
+  isGoodBackwardMove(move) {
+    //console.log('move: ' + JSON.stringify(move))
+    return !this.tubes[move.to].isUnicolor()
+  }
+  
+  /**
+   * Vertauscht Bälle zufällig.
+   * Warnung! Das kann zu unlösbaren Aufgaben führen.
+   */
+  randomizeBallsUnsolvable() {
     var numberOfMovements = this.numberOfTubes * this.tubeHeight * 8
     for(var c = 0; c < numberOfMovements; c++) {
       var donor = this.getNoneEmptyTubeIndex()
@@ -113,7 +201,6 @@ class GameState {
       var color = this.tubes[donor].removeBall()
       this.tubes[recipient].addBall(color)
     }
-    */
   }
   
   /**
@@ -126,6 +213,10 @@ class GameState {
     return a[randomIndex]
   }
   
+  /**
+   * liefert einen Array mit Röhren-Indexen, von denen gezogen werden darf,
+   * wenn das Spiel rückwärts gespielt wird.
+   */  
   reverseReceiverCandidates() {
     var a = []
     //console.log('this.numberOfTubes=' + this.numberOfTubes)
@@ -139,6 +230,10 @@ class GameState {
     return a
   }
   
+  /**
+   * liefert einen Array mit Röhren-Indexen, zu denen gezogen werden darf,
+   * wenn das Spiel rückwärts gespielt wird.
+   */
   reverseDonorCandidates() {
     var a = []
     //console.log('this.numberOfTubes=' + this.numberOfTubes)
@@ -189,6 +284,10 @@ class GameState {
     this.tubes[receiverIndex].addBall(color)
     return color
   }
+  
+  moveBall2(move) {
+    this.moveBall(move.from, move.to)
+  }  
   
   // kompliziertes Regelwerk
   isMoveAllowed(from, to) {
@@ -288,19 +387,51 @@ class Tube {
     * Daher ist die Berechnung bei einem Rückwärts-Spielzug anders.
     */
   isReverseDonorCandidate() {
+    // aus einer leeren Röhre kann kein Zug erfolgen
     if(this.isEmpty()) {
       return false
     }
+    // vorwärts gedacht: auf den Boden der leeren Röhre kann immer gezogen werden
     if(this.fillLevel == 1) {
       return true
     }
+    // vorwärts gedacht: Zug auf gleiche Farbe ist erlaubt
     if(this.colorOfHighestBall() == this.colorOfSecondHighestBall()) {
       return true
     }
     return false
   }
   
+  /**
+    * rückwärts gedacht: Es kann überall hingezogen werden,
+    * außer die Röhre ist schon voll 
+    */
   isReverseReceiverCandidate() {
     return !(this.isFull())
+  }
+  
+  /**
+   * Gibt wahr zurück, wenn mindestens 2 Kugeln in der Röhre sind
+   * und alle die gleiche Farbe haben
+   */
+   isUnicolor() {
+     //null oder nur eine Kugel zählt als falsch
+     if(this.fillLevel <= 1) {
+       return false
+     }
+     var color = this.cells[0]
+     for(var i = 1; i < this.fillLevel; i++) {
+       if(this.cells[i] != color) {
+         return false
+       }
+     } 
+     return true
+   }
+}
+
+class Move {
+  constructor(from, to) {
+    this.from = from
+    this.to = to
   }
 }

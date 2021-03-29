@@ -28,7 +28,7 @@ function newGame() {
  * from: Spalten Index Geber
  * to:   Spalten Index Empfaenger
  */
-function move(from, to) {
+function moove(from, to) {
   // Ball oben nicht mehr anzeigen
   var lifted = document.getElementById('lifted_' + from)
   var className = 'ball' + gameState.tubes[from].colorOfHighestBall()
@@ -116,7 +116,8 @@ function resetGameView() {
 	    }
 	  } else {
 	    if(gameState.isMoveAllowed(donorIndex, clickedCol)) {
-	      move(donorIndex, clickedCol)
+	      console.log('move from ' + donorIndex + ' to ' + clickedCol)
+	      moove(donorIndex, clickedCol)
         } else {
           // Ball wieder runter
           drop(donorIndex)

@@ -43,7 +43,7 @@
 	fill: grey;
 }
 .ball4 {
-	fill: blue;
+	fill: #2020ff;
 }
 .ball5 {
 	fill: red;
@@ -53,7 +53,6 @@
 }
 .ball7 {
 	fill: violet;
-	fill-opacity: 1;
 }
 .ball8 {
 	fill: lime;
@@ -63,4 +62,16 @@
 }
 .ball10 {
 	fill: navy;
+}
+
+.ball11 {
+	fill: cyan;
+}
+
+.ball12 {
+	fill: black;
+}
+
+.ball13 {
+	fill: olive;
 }
