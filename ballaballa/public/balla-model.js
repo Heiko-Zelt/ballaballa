@@ -1,5 +1,5 @@
 /**
- * model 
+ * model / state of the game
  */
  
 class GameState {
