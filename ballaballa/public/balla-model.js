@@ -9,7 +9,8 @@ class GameState {
     this.numberOfExtraTubes = numberOfExtraTubes
     this.tubeHeight = tubeHeight
     this.numberOfTubes = this.numberOfColors + this.numberOfExtraTubes
-    this.tubes = new Array(this.numberOfTubes)  
+    this.tubes = new Array(this.numberOfTubes)
+    this.moveLog = []  
   }
   
   clone() {
@@ -18,7 +19,8 @@ class GameState {
     for(var i = 0; i < this.numberOfTubes; i++) {
       miniMe.tubes[i] = this.tubes[i].clone()
     }
-    return miniMe 
+    miniMe.moveLog = this.moveLog
+    return miniMe
   }
   
   newGame() {
@@ -282,12 +284,28 @@ class GameState {
     console.log('moveBall from ' + donorIndex + ' to ' + receiverIndex)
     var color = this.tubes[donorIndex].removeBall()
     this.tubes[receiverIndex].addBall(color)
-    return color
   }
   
   moveBall2(move) {
     this.moveBall(move.from, move.to)
-  }  
+  }
+  
+  moveBallAndLog(move) {
+    // Es ist kein echter Spielzug,
+    // wenn Quelle zu Ziel gleich sind. 
+    if(move.to != move.from) {
+      this.moveBall2(move)
+      this.moveLog.push(move)
+      console.log('moveLog: ' + JSON.stringify(this.moveLog))
+    }
+  }
+  
+  undoLastMove() {
+    var forwardMove = this.moveLog.pop()
+    var backwardMove = new Move(forwardMove.to, forwardMove.from)
+    this.moveBall2(backwardMove)
+    return backwardMove
+  }
   
   // kompliziertes Regelwerk
   isMoveAllowed(from, to) {
