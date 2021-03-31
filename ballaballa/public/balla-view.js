@@ -1,5 +1,5 @@
 /**
- * View
+ * View / User-Interface
  */
 
 // Spielstand zu Anfang des Spieles
