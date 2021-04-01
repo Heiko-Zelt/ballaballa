@@ -2,14 +2,26 @@
  * View / User-Interface
  */
 
-// Spielstand zu Anfang des Spieles
+/**
+ * Spielstand zu Anfang des Spieles
+ */
 let originalGameState = null;
  
-// aktueller Spielstand
+/**
+ * aktueller Spielstand
+ */ 
 let gameState = null;
 
-// welche Spalte wurde zuerst geklickt
+/**
+ * welche Spalte wurde zuerst geklickt
+ */ 
 let donorIndex = null;
+
+/**
+ * auf welcher Höhe lag der oberste Ball bevor er angehoben wurde.
+ * (nur für den Fall, dass ein Zug abgebrochen wird und er wieder gesenkt wird.)
+ */
+let donorRow = null;
 
 function newGame() {
   var numberOfColors =  parseInt(document.getElementById("numberOfColors").value)
@@ -30,32 +42,36 @@ function newGame() {
  * to:   Spalten Index Empfaenger
  * from == donorIndex
  */
-function normalMove(from, to) {
-  console.log('normal move from ' + from + ' to ' + to)
+function normalMove(move) {
+  console.log('normal move from ' + move.from + ' to ' + move.to)
 
   // Der Zug wurde schon ausgeführt. Deswegen ergibt sich die Farbe aus dem Zielfeld.
   console.log('Erhöhten Ball nicht mehr anzeigen.')
   removeLiftedBall()
           
   // Ball einlochen
-  holeBall(to)
+  holeBall(move.to)
   
   // globale Variable
   donorIndex = null 
 }
 
-function undoMove(from, to) {
-  console.log('undo move from ' + from + ' to ' + to)
+/**
+ * move backwards.
+ * a ball may be in lifted state or not.
+ */
+function undoMove(move) {
+  console.log('undo move from ' + move.from + ' to ' + move.to)
   if(donorIndex != null)  {
     console.log('Quell-Ball ist oben. Zug abbrechen. Erhöhten Ball fallen lassen.')
-    drop()
+    dropBall(move.to)
   }
-  var row = gameState.tubes[from].fillLevel
-  console.log('ball wegnehmen von ' + from + ', ' + row)
-  removeBall(from, row)
+  var row = gameState.tubes[move.from].fillLevel
+  console.log('ball wegnehmen von ' + move.from + ', ' + row)
+  removeBall(move.from, row)
 
   // Ball einlochen
-  holeBall(to)
+  holeBall(move.to)
   
   // globale Variable
   donorIndex = null  
@@ -74,8 +90,12 @@ function holeBall(to) {
   receiverElement.classList.add('ball' + color)
 }
 
-function lift(from) {
-  console.log('lift(from=' + from + ')')
+function liftBall(from) {
+  // Globale Variablen
+  donorIndex = from
+  donorRow = gameState.tubes[from].fillLevel - 1
+	
+  console.log('liftBall(from=' + from + ')')
   console.log('tube=' + JSON.stringify(gameState.tubes[from]))
   
   // Ball oben anzeigen
@@ -85,15 +105,12 @@ function lift(from) {
   console.log('className=' + className)
   lifted.classList.remove('ball0')
   lifted.classList.add(className)
-  console.log('>>>>>>> lifted.classList' + JSON.stringify(lifted.classList))
+  console.log('lifted.classList' + JSON.stringify(lifted.classList))
 	      
   // Ball unten nicht mehr anzeigen
-  var rowToHide = gameState.tubes[from].fillLevel - 1
-  console.log('rowToHide=' + rowToHide)
-  removeBall(from, rowToHide)
-  
-  // globale Variable
-  donorIndex = from
+  donorRow = gameState.tubes[from].fillLevel - 1
+  console.log('donorRow=' + donorRow)
+  removeBall(from, donorRow)
 }
 
 /**
@@ -102,13 +119,13 @@ function lift(from) {
  * es sich um einen Undo-Zug handelt und noch ein Ball in der Luft schwebte.
  * Vorsicht: verwendet die globale Variable donorIndex
  */
-function drop() {
-  console.log('drop() donorIndex=' + donorIndex)
+function dropBall() {
+  console.log('dropBall() donorIndex=' + donorIndex + ', donorRow=' + donorRow)
   
   removeLiftedBall()
 	      
   // Ball unten wieder anzeigen
-  reapear()
+  reapearBall()
 }
 
 /**
@@ -133,19 +150,23 @@ function removeBall(columnIndex, rowIndex) {
 
 /**
  * ein Ball wird wieder angezeigt, nachdem er erhöht war.
- * verwendet die globale Variable donorIndex.
+ * verwendet die globalen Variablen donorIndex und donorRow.
  */
-function reapear() {
-  var cellId = 'cell_' + donorIndex + '_' + (gameState.tubes[donorIndex].fillLevel - 1)
+function reapearBall() {
+  console.log('>>>>>> reapearBall() donorIndex=' + donorIndex)
+  var color = gameState.tubes[donorIndex].cells[donorRow]
+
+  var cellId = 'cell_' + donorIndex + '_' + donorRow
   console.log('cellId=' + cellId)
   var hidden = document.getElementById(cellId)
   hidden.classList.remove('ball0')
-  color = gameState.tubes[donorIndex].colorOfHighestBall()
-  className = 'ball' + color
+  
+  var className = 'ball' + color
   hidden.classList.add(className)
   
-  // globale Variable
+  // globale Variablen
   donorIndex = null
+  donorRow = null
 }
 
 /**
@@ -157,7 +178,7 @@ function removeLiftedBall() {
   var lifted = document.getElementById('lifted_' + donorIndex)
   removeBallColorClass(lifted)
   lifted.classList.add('ball0')
-  console.log('>>>>> lifted.classList' + JSON.stringify(lifted.classList))
+  console.log('lifted.classList' + JSON.stringify(lifted.classList))
 }
 
 function resetGameView() {
@@ -181,14 +202,14 @@ function resetGameView() {
 	  console.log('clicked column: ' + clickedCol)
 	  if(donorIndex == null) {
 	    if(!gameState.tubes[clickedCol].isEmpty()) {
-          lift(clickedCol)
+          liftBall(clickedCol)
 	    }
 	  } else {
 	    if(gameState.isMoveAllowed(donorIndex, clickedCol)) {
 	      console.log('move from ' + donorIndex + ' to ' + clickedCol)
 	      var move = new Move(donorIndex, clickedCol)
           gameState.moveBallAndLog(move)
-	      normalMove(donorIndex, clickedCol)
+	      normalMove(move)
 	      if(gameState.moveLog.length != 0) {
 	        var undoButton = document.getElementById('undoButton')
             undoButton.disabled = false
@@ -196,9 +217,9 @@ function resetGameView() {
         } else {
           console.log('Wechsel!!!!')
           // Ball wieder runter
-          drop()
+          dropBall(donorIndex)
           // dafür anderer Ball hoch
-          lift(clickedCol)
+          liftBall(clickedCol)
         }
 	  }
 	})
@@ -260,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return 
     }
     var backwardMove = gameState.undoLastMove()
-    undoMove(backwardMove.from, backwardMove.to)
+    undoMove(backwardMove)
     if(gameState.moveLog.length == 0) {
       undoButton.disabled = true
     }

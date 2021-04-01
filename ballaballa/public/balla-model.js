@@ -127,7 +127,7 @@ class GameState {
       }
       var catMoves = this.categorizeBackwardMoves(possibleMoves)
       var move = this.selectMove(catMoves)
-      this.moveBall2(move)
+      this.moveBall(move)
     }
     console.log('finished with number of moves: ' + i)
   }
@@ -279,31 +279,37 @@ class GameState {
   randomInt(max) {
     return Math.floor(Math.random() * max)
   }
-  
-  moveBall(donorIndex, receiverIndex) {
-    console.log('moveBall from ' + donorIndex + ' to ' + receiverIndex)
-    var color = this.tubes[donorIndex].removeBall()
-    this.tubes[receiverIndex].addBall(color)
+
+  /**
+   * moves a ball from one tube to another
+   * (the tubes may be the same, but that doesn't make much sense)
+   */  
+  moveBall(move) {
+	console.log('moveBall(' + JSON.stringify(move) + ')')
+	var color = this.tubes[move.from].removeBall()
+    this.tubes[move.to].addBall(color)
   }
   
-  moveBall2(move) {
-    this.moveBall(move.from, move.to)
-  }
-  
+  /**
+   * moves a ball and logs for possible undo operation
+   */
   moveBallAndLog(move) {
     // Es ist kein echter Spielzug,
     // wenn Quelle zu Ziel gleich sind. 
     if(move.to != move.from) {
-      this.moveBall2(move)
+      this.moveBall(move)
       this.moveLog.push(move)
       console.log('moveLog: ' + JSON.stringify(this.moveLog))
     }
   }
   
+  /**
+   * undoes last move, according to log
+   */
   undoLastMove() {
     var forwardMove = this.moveLog.pop()
     var backwardMove = new Move(forwardMove.to, forwardMove.from)
-    this.moveBall2(backwardMove)
+    this.moveBall(backwardMove)
     return backwardMove
   }
   
