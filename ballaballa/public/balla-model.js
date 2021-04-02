@@ -42,6 +42,23 @@ class GameState {
     this.numberOfTubes++;
     this.numberOfExtraTubes++;
   }
+
+  /**
+    * liefert true, wenn das Spiel beendet / das Puzzle gelöst ist,
+    * also jede Röhren entweder leer oder gelöst ist.
+    */
+  isSolved() {
+	for(var i = 0; i < this.numberOfTubes; i++) {
+      console.log('i=' + i)
+	  if(!(this.tubes[i].isEmpty() || this.tubes[i].isSolved())) {
+		console.log('tube ' + i + ' is not empty or solved')
+        return false
+      }
+      console.log('tube ' + i + ' is not solved')
+	}
+	console.log('puzzle is solved')
+	return true
+  }
   
   initTubes() {
     console.log('initTubes()')
@@ -504,6 +521,23 @@ class Tube {
      //console.log('unicolor: i=' + i)
      return i
    }
+
+  /**
+   * liefert wahr, wenn die Röhre gelöst ist,
+   * also die Röhre voll ist und alle Bälle die gleiche Farbe haben.
+   */
+  isSolved() {
+	if(!this.isFull()) {
+		return false
+	}
+	var color = this.cells[0]
+	for(var i = 1; i < this.tubeHeight; i++) {
+	  if(this.cells[i] != color) {
+		return false
+	  }
+      return true
+	}
+  }
 }
 
 class Move {
