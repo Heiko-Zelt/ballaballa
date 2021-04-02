@@ -198,7 +198,7 @@ function clickOnTube(clickedCol) {
 				undoButton.disabled = false
 			}
 			if(gameState.isSolved()) {
-				alert('😀 Sie haben das Puzzle gelöst. 😀')
+				alert('😀 Genial! Sie haben das Puzzle gelöst. 😀')
 				newGame()
 		        resetGameView()
 			}
