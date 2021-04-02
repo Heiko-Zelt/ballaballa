@@ -40,13 +40,13 @@
 	fill: green;
 }
 .ball3 {
-	fill: grey;
-}
-.ball4 {
 	fill: #2020ff;
 }
-.ball5 {
+.ball4 {
 	fill: red;
+}
+.ball5 {
+	fill: gray;
 }
 .ball6 {
 	fill: orange;

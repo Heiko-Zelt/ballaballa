@@ -49,14 +49,14 @@ class GameState {
     for(var i = 0; i < this.numberOfColors; i++) {
       // Roehre mit Index 0 hat Farbe 1, etc...
       var initialColor = i + 1
-      console.log('initialColor: ' + initialColor)
+      //console.log('initialColor: ' + initialColor)
       this.tubes[i] = new Tube(this.tubeHeight)
       this.tubes[i].fillWithOneColor(initialColor)
     }
     // leere Röhren
     for(var i = this.numberOfColors; i < this.numberOfTubes; i++) {
       // keine Farbe
-      console.log('initialColor: 0')
+      //console.log('initialColor: 0')
       this.tubes[i] = new Tube(this.tubeHeight)
       this.tubes[i].fillWithOneColor(0)
     }
@@ -67,7 +67,7 @@ class GameState {
    */
   mixTubes() {
     console.log('mixTubes()')
-    for(var c = 0; c < this.numberOfTubes * 2; c++) {
+    for(var c = 0; c < this.numberOfTubes * 3; c++) {
       var i = this.randomInt(this.numberOfTubes)
       var j = this.randomInt(this.numberOfTubes)
       this.swapTubes(i, j)
@@ -117,48 +117,44 @@ class GameState {
    * plays game backwards with many moves
    */
   randomizeBallsMany() {
-    var maxMoves = this.numberOfTubes * this.tubeHeight
+	var lastMove = null
+    var maxMoves = this.numberOfTubes * this.tubeHeight * 3
     var i;
     for(i = 0; i < maxMoves; i++) {
-      var possibleMoves = this.allPossibleBackwardMoves()
+      var possibleMoves = this.allPossibleBackwardMoves(lastMove)
       console.log('i: ' + i + ', possibleMoves: ' + JSON.stringify(possibleMoves))
       if(possibleMoves.length == 0) {
         break
       }
-      var catMoves = this.categorizeBackwardMoves(possibleMoves)
-      var move = this.selectMove(catMoves)
+      var lottery = this.lottery(possibleMoves)
+      if(lottery.length == 0) {
+        break
+      }
+      //console.log('i: ' + i + ', lottery: ' + JSON.stringify(lottery))
+      var move = this.selectOneRandomly(lottery)
+      console.log('selected move ' + JSON.stringify(move))
       this.moveBall(move)
+      lastMove = move
     }
-    console.log('finished with number of moves: ' + i)
+    console.log('randomize finished with number of backward moves: ' + i)
   }
-  
-  /**
-   * selects a good move if possible,
-   * otherwise a bad move
-   * (There must be at least one possible move)
-   */
-  selectMove(catMoves) {
-    var goodMoves = catMoves[0]
-    var badMoves = catMoves[1]
-    console.log('goodMoves: ', JSON.stringify(goodMoves))
-    console.log('badMoves: ', JSON.stringify(badMoves))
-    var move = (goodMoves.length != 0)?this.selectOneRandomly(goodMoves):this.selectOneRandomly(badMoves)
-    console.log('selected: ', JSON.stringify(move))
-    return move
-  } 
   
   /**
    * liefert eine Liste mit allen möglichen Zügen,
    * wenn das Spiel rückwärts gespielt wird.
+   * ausgenommen ist der letzte Zug rückwärts (hin und her macht wenig Sinn)
    */
-  allPossibleBackwardMoves() {
+  allPossibleBackwardMoves(lastMove) {
     var allMoves = []
     for(var from = 0; from < this.numberOfTubes; from++) {
       if(this.tubes[from].isReverseDonorCandidate()) {
         for(var to = 0; to < this.numberOfTubes; to++) {
           if(this.tubes[to].isReverseReceiverCandidate()) {
             if(from != to) {
-              allMoves.push(new Move(from, to))
+	          var move = new Move(from, to)
+              if(!move.backwards().isEqual(lastMove)) {
+                allMoves.push(move)
+              }
             }
           }
         }
@@ -166,23 +162,70 @@ class GameState {
     }
     return allMoves
   }
-  
-  /**
-   * Teilt alle Rückwärts-Züge in Kategorien ein
-   */
-  categorizeBackwardMoves(allMoves) {
-    var goodMoves = []
-    var badMoves = []
-    allMoves.forEach(function(move) {
-      if(this.isGoodBackwardMove(move)) {
-        goodMoves.push(move)
-      } else {
-        badMoves.push(move)
-      }
-    }, this)
-    return [goodMoves, badMoves]
+
+  multiPush(array, element, number) {
+	for(var i = 0; i < number; i++) {
+		array.push(element)
+	}
   }
   
+  /**
+   * Bewertet alle Rückwärts-Züge und gibt entsprechende Anzahl Lose in die Urne.
+   */
+  lottery(allMoves) {
+	var lots = []
+	for(var i = 0; i < allMoves.length; i++) {
+	  var move = allMoves[i]
+      var rate = this.rateBackwardMove(move)
+      console.log('rate: ' + rate)
+      this.multiPush(lots, move, rate)
+    }
+    return lots
+  }
+  
+  /**
+   * Bewertet einen Rückwärts-Zug
+   * returns: niedrige Zahl: schlecht, hoche Zahl: gut
+   * Kategorie a: Zug auf einfarbige Säule anderer Farbe (weitere Unterteilung nach Höhe der Säule)
+   * Kategorie b: Zug auf andersfarbigen Ball, der darunter keinen gleichfarbigen Ball hat
+   * Kategorie c: Zug in leere Röhre
+   * Kategorie d: Zug auf gleichfarbigen Ball
+   * todo: Kategorie e: Zug mit andersfarbigem Ball, auf einen Ball der darunter einen gleichfarbigen hat,
+   *   aber nicht alle in der Ziel-Röhre gleichfarbig sind (kompliziert)
+   */
+  rateBackwardMove(move) {
+    console.log('move ' + JSON.stringify(move))
+
+    // Zug in leere Röhre
+	if(this.tubes[move.to].isEmpty()) {
+	  console.log('Zug in leere Röhre')
+      return 50
+    }
+
+    // Zug auf gleichfarbigen Ball
+    var ballColor = this.tubes[move.from].colorOfHighestBall()
+    var targetColor = this.tubes[move.to].colorOfHighestBall()
+    console.log('>>>>>> ballColor ' + ballColor + '== targetColor ' + targetColor + '?')
+    if(targetColor == ballColor) {
+      console.log('Zug auf gleichfarbigen Ball')
+      return 50
+    }
+
+    // Zug auf einfarbige Säule anderer Farbe (weitere Unterteilung nach Höhe der Säule)
+    var n = this.tubes[move.to].unicolor()
+    console.log('unicolor: ' + n)
+    if(n > 1) {
+	  var points = this.tubeHeight - n - 1
+	  console.log('Zug auf einfarbige Säule anderer Farbe :-( Punkte: ' + points)
+      return points
+    }
+
+    // Zug auf andersfarbigen Ball, der darunter keinen gleichfarbigen Ball hat
+    console.log('Zug auf andersfarbigen Ball, der darunter keinen gleichfarbigen Ball hat')
+    return 40
+  }
+
+
   /**
    * sehr einfaches Kriterium
    */
@@ -308,7 +351,7 @@ class GameState {
    */
   undoLastMove() {
     var forwardMove = this.moveLog.pop()
-    var backwardMove = new Move(forwardMove.to, forwardMove.from)
+    var backwardMove = forwardMove.backwards()
     this.moveBall(backwardMove)
     return backwardMove
   }
@@ -399,7 +442,9 @@ class Tube {
   }
   
   colorOfHighestBall() {
-    return this.cells[this.fillLevel - 1]
+	var color = this.cells[this.fillLevel - 1]
+	//console.log('fillLevel: ' + this.fillLevel + ', color of highest ball:' + color)
+    return color
   }
   
   colorOfSecondHighestBall() {
@@ -435,21 +480,29 @@ class Tube {
   }
   
   /**
-   * Gibt wahr zurück, wenn mindestens 2 Kugeln in der Röhre sind
-   * und alle die gleiche Farbe haben
+   * Gibt Anzhal der Bälle zurück, wenn alle die gleiche Farbe haben.
+   * Gibt null zurück, wenn Röhre leer ist oder die Bälle unterschiedliche Farbe haben.
+   * Gibt 1 zurück, wenn nur ein Ball in der Röhre ist.
    */
-   isUnicolor() {
-     //null oder nur eine Kugel zählt als falsch
-     if(this.fillLevel <= 1) {
-       return false
+   unicolor() {
+     if(this.isEmpty()) {
+	   //console.log('unicolor: Sonderfall leer')
+       return 0
+     }
+     if(this.fillLevel == 1) {
+	   //console.log('unicolor: Sonderfall 1')
+	   return 1
      }
      var color = this.cells[0]
-     for(var i = 1; i < this.fillLevel; i++) {
+     var i
+     for(i = 1; i < this.fillLevel; i++) {
        if(this.cells[i] != color) {
-         return false
+	     //console.log('unicolor: unterschiedlich')
+         return 0
        }
-     } 
-     return true
+     }
+     //console.log('unicolor: i=' + i)
+     return i
    }
 }
 
@@ -458,4 +511,16 @@ class Move {
     this.from = from
     this.to = to
   }
-}
+
+  backwards() {
+	var retro = new Move(this.to, this.from)
+	return retro
+  }
+
+  isEqual(otherMove) {
+	if(otherMove == null) {
+	  return false
+	}
+	return (this.from == otherMove.from) && (this.to == otherMove.to)   
+  }
+ }
