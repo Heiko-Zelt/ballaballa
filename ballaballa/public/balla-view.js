@@ -62,7 +62,7 @@ function normalMove(move) {
  */
 function undoMove(move) {
 	console.log('undo move from ' + move.from + ' to ' + move.to)
-	if(donorIndex != null) {
+	if (donorIndex != null) {
 		console.log('Quell-Ball ist oben. Zug abbrechen. Erhöhten Ball fallen lassen.')
 		dropBall(move.to)
 	}
@@ -83,9 +83,9 @@ function undoMove(move) {
 function holeBall(to) {
 	console.log('holeBall(to=' + to + ')')
 	var color = gameState.tubes[to].colorOfHighestBall()
-	var receiverCellId = 'cell_' + to + '_' + (gameState.tubes[to].fillLevel - 1)
-	console.log('receiverCellId=' + receiverCellId)
-	var receiverElement = document.getElementById(receiverCellId)
+	var receiverBallId = 'ball_' + to + '_' + (gameState.tubes[to].fillLevel - 1)
+	console.log('receiverBallId=' + receiverBallId)
+	var receiverElement = document.getElementById(receiverBallId)
 	receiverElement.classList.remove('ball0')
 	receiverElement.classList.add('ball' + color)
 }
@@ -143,7 +143,7 @@ function removeBallColorClass(elementToHide) {
  */
 function removeBall(columnIndex, rowIndex) {
 	console.log('removeBall(columnIndex=' + columnIndex + ', rowIndex=' + rowIndex + ')')
-	var hidden = document.getElementById('cell_' + columnIndex + '_' + rowIndex)
+	var hidden = document.getElementById('ball_' + columnIndex + '_' + rowIndex)
 	removeBallColorClass(hidden)
 	hidden.classList.add('ball0')
 }
@@ -156,9 +156,9 @@ function reapearBall() {
 	console.log('>>>>>> reapearBall() donorIndex=' + donorIndex)
 	var color = gameState.tubes[donorIndex].cells[donorRow]
 
-	var cellId = 'cell_' + donorIndex + '_' + donorRow
-	console.log('cellId=' + cellId)
-	var hidden = document.getElementById(cellId)
+	var ballId = `ball_${donorIndex}_${donorRow}`
+	console.log('ballId=' + ballId)
+	var hidden = document.getElementById(ballId)
 	hidden.classList.remove('ball0')
 
 	var className = 'ball' + color
@@ -197,10 +197,10 @@ function clickOnTube(clickedCol) {
 				var undoButton = document.getElementById('undoButton')
 				undoButton.disabled = false
 			}
-			if(gameState.isSolved()) {
+			if (gameState.isSolved()) {
 				alert('😀 Genial! Sie haben das Puzzle gelöst. 😀')
 				newGame()
-		        resetGameView()
+				resetGameView()
 			}
 		} else {
 			console.log('Wechsel!!!!')
@@ -213,6 +213,97 @@ function clickOnTube(clickedCol) {
 }
 
 function resetGameView() {
+	var ballRadius = 40
+	var ballRadiusInside = ballRadius - 0.5
+	var ballDiameter = ballRadius * 2
+	var ballPadding = 4
+	var tubeWidth = ballDiameter + ballPadding * 2
+	var tubeHeight = ballDiameter * gameState.tubeHeight
+	var tubeLowerCornerRadius = 26
+	var tubePadding = 8
+	var boardWidth = gameState.numberOfTubes * tubeWidth + (gameState.numberOfTubes - 1) * tubePadding
+	var boardHeight = (gameState.tubeHeight + 1) * ballDiameter + ballPadding
+
+	var svgNS = 'http://www.w3.org/2000/svg'
+	var svg = document.createElementNS(svgNS, 'svg')
+	svg.setAttribute('width', boardWidth)
+	svg.setAttribute('height', boardHeight)
+
+    /*
+	var rect = document.createElementNS(svgNS, 'rect')
+	rect.setAttribute('x', 0)
+	rect.setAttribute('y', 0)
+	rect.setAttribute('width', boardWidth)
+	rect.setAttribute('height', boardHeight)
+	rect.setAttribute('fill', '#95B3D7')
+	svg.appendChild(rect)
+	*/
+
+	for (var col = 0; col < gameState.numberOfTubes; col++) {
+		var tube = gameState.tubes[col]
+		var tubePath = document.createElementNS(svgNS, 'path')
+		var left = col * (tubeWidth + tubePadding)
+		//var right = (col + 1) * tubeWidth + col * tubePadding
+		var upperLeft = `${left},${ballDiameter}`
+		//var lowerLeft = `${left},${boardHeight}`
+		//var lowerRight = `${right},${boardHeight}`
+		//var upperRight = `${right},${ballHeight}`
+		//path = `M${upperLeft} v${tubeHeight - tubeLowerCornerRadius} l${tubeLowerCornerRadius},${tubeLowerCornerRadius} h${tubeWidth - tubeLowerCornerRadius} v${tubeHeight * -1} z`
+		verticalHeight = tubeHeight - tubeLowerCornerRadius + ballPadding
+		archLeft = `a${tubeLowerCornerRadius},${tubeLowerCornerRadius} 0 0 0 ${tubeLowerCornerRadius},${tubeLowerCornerRadius}`
+		archRight = `a${tubeLowerCornerRadius},${tubeLowerCornerRadius} 0 0 0 ${tubeLowerCornerRadius},${tubeLowerCornerRadius * -1}`
+		path = `M${upperLeft} v${verticalHeight} ${archLeft} h${tubeWidth - tubeLowerCornerRadius * 2} ${archRight} v${verticalHeight * -1} z`
+		console.log(path)
+		tubePath.setAttributeNS(null, 'd', path)
+		tubePath.classList.add('tube')
+		svg.appendChild(tubePath);
+		
+		var liftedBall = document.createElementNS(svgNS, 'circle')
+		liftedBall.setAttributeNS(null, 'cx', col * (tubeWidth + tubePadding) + ballRadius + ballPadding)
+		liftedBall.setAttributeNS(null, 'cy', ballRadius)
+		liftedBall.setAttributeNS(null, 'r', ballRadiusInside);
+		liftedBall.id = 'lifted_' + col
+		liftedBall.classList.add('balla')
+		liftedBall.classList.add('ball0') // invisible
+		svg.appendChild(liftedBall);
+
+		for (var row = (gameState.tubeHeight - 1); row >= 0; row--) {
+			var ball = document.createElementNS(svgNS, 'circle')
+			ball.setAttributeNS(null, 'cx', col * (tubeWidth + tubePadding) + ballRadius + ballPadding)
+			ball.setAttributeNS(null, 'cy', (gameState.tubeHeight - row) * ballDiameter + ballRadius)
+			ball.setAttributeNS(null, 'r', ballRadiusInside);
+			ball.id = `ball_${col}_${row}` 
+			className = 'ball' + tube.cells[row] // color
+			//console.log('className: ', className)
+			ball.classList.add(className)
+			ball.classList.add('balla')
+			svg.appendChild(ball);
+		}
+		
+		var tubeBoundingBox = document.createElementNS(svgNS, 'rect')
+	    tubeBoundingBox.setAttribute('x', left)
+	    tubeBoundingBox.setAttribute('y', ballDiameter)
+	    tubeBoundingBox.setAttribute('width', tubeWidth)
+	    tubeBoundingBox.setAttribute('height', tubeHeight)
+		tubeBoundingBox.id = 'tubeBoundingBox_' + col
+		tubeBoundingBox.classList.add('tubeBoundingBox')
+		tubeBoundingBox.addEventListener('click', function() {
+			var clickedCol = parseInt(this.id.split('_')[1])
+			clickOnTube(clickedCol)
+		})
+	    svg.appendChild(tubeBoundingBox)
+	}
+
+	var board = document.getElementById("board")
+	board.textContent = '';
+	donorIndex = null
+	board.appendChild(svg);
+	var undoButton = document.getElementById('undoButton')
+	undoButton.disabled = true
+}
+
+
+function resetGameView_old() {
 	var board = document.getElementById("board")
 	var cellTemplate = document.getElementById("cellTemplate")
 	var tubeTemplate = document.getElementById("tubeTemplate")

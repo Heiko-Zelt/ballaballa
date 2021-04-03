@@ -1,32 +1,18 @@
 @charset "UTF-8";
 
-.ballGroup {
-    /* fill: #888888; */
+.balla {
     stroke: white;
     stroke-width: 2;
 }
 
-.balla {
-	vertical-align: middle;
+.tube {
+	fill: #e6e6e6;;
 }
 
-.tubeTab {
-	padding: 0px;
-	margin: 1px;
-	border: 0px solid black;
-	border-collapse: collapse;
-}
-
-.tubeTab tr:first-child td {
-	background-color: transparent;
-}
-
-.tubeTab tr:not(:first-child) td {
-	background-color: rgb(230, 230, 230);
-}
-
-.tubeTab tr:last-child td {
-	border-radius: 0px 0px 20px 20px;
+/* invisible in front of balls but clickable */
+.tubeBoundingBox {
+	stroke-opacity: 0;
+	fill-opacity: 0;
 }
 
 .ball0 {
