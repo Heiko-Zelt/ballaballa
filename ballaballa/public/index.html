@@ -1,50 +1,42 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>😀 Balla-balla</title>
-    <script src="balla-model.js"></script>
-    <script src="balla-view.js"></script>
-    <link rel="stylesheet" href="style.css">
-  </head>
-  <body>
-    <h1>😀 Balla-balla</h1>
-  
-    <form id="startForm">
-      <label for="numberOfColors">Anzahl Farben:</label>
-      <select id="numberOfColors">
-        <option>2</option>
-        <option>3</option>
-        <option>4</option>
-        <option>5</option>
-        <option>6</option>
-        <option selected="selected">7</option>
-        <option>8</option>
-        <option>9</option>
-        <option>10</option>
-        <option>11</option>
-        <option>12</option>
-        <option>13</option>
-      </select>,
-      <label for="numberOfExtraTubes">Extra Röhren:</label>
-      <select id="numberOfExtraTubes">
-        <option>1</option>
-        <option selected="selected">2</option>
-        <option>3</option>
-      </select>
-      <label for="tubeHeight">Höhe:</label>
-      <select id="tubeHeight">
-        <option>3</option>
-        <option selected="selected">4</option>
-        <option>5</option>
-        <option>6</option>
-      </select>    
-      <button id="startButton">Neues Spiel starten</button>
-      <button id="resetButton">Rücksetzen</button>
-      <button id="undoButton" disabled>1 Spielzug zurück</button>
-      <button id="cheatButton">Schummeln</button>
-    </form>
-  
-    <div id="board"></div>
-  </body>  
+<head>
+<meta charset="UTF-8">
+<title>😀 Balla-balla</title>
+<script src="balla-model.js"></script>
+<script src="balla-view.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body><header id="kopf"><h1>😀 Balla-balla</h1><form id="startForm">
+			<label for="numberOfColors">Anzahl Farben:</label> <select
+				id="numberOfColors">
+				<option>2</option>
+				<option>3</option>
+				<option>4</option>
+				<option>5</option>
+				<option>6</option>
+				<option selected="selected">7</option>
+				<option>8</option>
+				<option>9</option>
+				<option>10</option>
+				<option>11</option>
+				<option>12</option>
+				<option>13</option>
+			</select>, <label for="numberOfExtraTubes">Extra Röhren:</label> <select
+				id="numberOfExtraTubes">
+				<option>1</option>
+				<option selected="selected">2</option>
+				<option>3</option>
+			</select> <label for="tubeHeight">Höhe:</label> <select id="tubeHeight">
+				<option>3</option>
+				<option selected="selected">4</option>
+				<option>5</option>
+				<option>6</option>
+			</select>
+			<button id="startButton">Neues Spiel starten</button>
+			<button id="resetButton">Rücksetzen</button>
+			<button id="undoButton" disabled>1 Spielzug zurück</button>
+			<button id="cheatButton">Schummeln</button>
+		</form>
+	</header><main id="board"></main></body>
 </html>
