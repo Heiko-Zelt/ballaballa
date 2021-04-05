@@ -49,14 +49,14 @@ class GameState {
     */
   isSolved() {
 	for(var i = 0; i < this.numberOfTubes; i++) {
-      console.debug('i=' + i);
+      //console.debug('i=' + i);
 	  if(!(this.tubes[i].isEmpty() || this.tubes[i].isSolved())) {
-		console.debug('tube ' + i + ' is not empty or solved');
+		//console.debug('tube ' + i + ' is not empty or solved');
         return false;
       }
-      console.debug('tube ' + i + ' is not solved');
+      //console.debug('tube ' + i + ' is not solved');
 	}
-	console.debug('puzzle is solved');
+	//console.debug('puzzle is solved');
 	return true;
   }
   
@@ -105,7 +105,7 @@ class GameState {
    * Warning! This leads to easy solvable puzzles.
    */
   randomizeBalls() {
-    console.debug('randomizeBalls()');
+    //console.debug('randomizeBalls()');
     
     /* Es ist egal, ob erst reverse Geber oder Nehmer ausgewählt wird.
      * Es besteht keine Abhängigkeit zur Ball-Farbe.
@@ -139,7 +139,7 @@ class GameState {
     var i;
     for(i = 0; i < maxMoves; i++) {
       var possibleMoves = this.allPossibleBackwardMoves(lastMove);
-      console.debug('i: ' + i + ', possibleMoves: ' + JSON.stringify(possibleMoves));
+      //console.debug('i: ' + i + ', possibleMoves: ' + JSON.stringify(possibleMoves));
       if(possibleMoves.length == 0) {
         break;
       }
@@ -149,11 +149,11 @@ class GameState {
       }
       //console.debug('i: ' + i + ', lottery: ' + JSON.stringify(lottery))
       var move = this.selectOneRandomly(lottery);
-      console.debug('selected move ' + JSON.stringify(move));
+      //console.debug('selected move ' + JSON.stringify(move));
       this.moveBall(move);
       lastMove = move;
     }
-    console.debug('randomize finished with number of backward moves: ' + i);
+    //console.debug('randomize finished with number of backward moves: ' + i);
   }
   
   /**
@@ -194,7 +194,7 @@ class GameState {
 	for(var i = 0; i < allMoves.length; i++) {
 	  var move = allMoves[i];
       var rate = this.rateBackwardMove(move);
-      console.debug('rate: ' + rate);
+      //console.debug('rate: ' + rate);
       this.multiPush(lots, move, rate);
     }
     return lots;
@@ -211,11 +211,11 @@ class GameState {
    *   aber nicht alle in der Ziel-Röhre gleichfarbig sind (kompliziert)
    */
   rateBackwardMove(move) {
-    console.debug('move ' + JSON.stringify(move));
+    //console.debug('move ' + JSON.stringify(move));
 
     // Zug in leere Röhre
 	if(this.tubes[move.to].isEmpty()) {
-	  console.debug('Zug in leere Röhre');
+	  //console.debug('Zug in leere Röhre');
       return 50;
     }
 
@@ -224,21 +224,21 @@ class GameState {
     var targetColor = this.tubes[move.to].colorOfHighestBall();
     // console.debug('ballColor ' + ballColor + '== targetColor ' + targetColor + '?');
     if(targetColor == ballColor) {
-      console.debug('Zug auf gleichfarbigen Ball');
+      //console.debug('Zug auf gleichfarbigen Ball');
       return 50
     }
 
     // Zug auf einfarbige Säule anderer Farbe (weitere Unterteilung nach Höhe der Säule)
     var n = this.tubes[move.to].unicolor();
-    console.debug('unicolor: ' + n);
+    //console.debug('unicolor: ' + n);
     if(n > 1) {
 	  var points = this.tubeHeight - n - 1;
-	  console.debug('Zug auf einfarbige Säule anderer Farbe :-( Punkte: ' + points);
+	  //console.debug('Zug auf einfarbige Säule anderer Farbe :-( Punkte: ' + points);
       return points;
     }
 
     // Zug auf andersfarbigen Ball, der darunter keinen gleichfarbigen Ball hat
-    console.debug('Zug auf andersfarbigen Ball, der darunter keinen gleichfarbigen Ball hat');
+    //console.debug('Zug auf andersfarbigen Ball, der darunter keinen gleichfarbigen Ball hat');
     return 40;
   }
 
@@ -325,7 +325,7 @@ class GameState {
    * (the tubes may be the same, but that doesn't make much sense)
    */  
   moveBall(move) {
-	console.debug('moveBall(' + JSON.stringify(move) + ')');
+	//console.debug('moveBall(' + JSON.stringify(move) + ')');
 	var color = this.tubes[move.from].removeBall();
     this.tubes[move.to].addBall(color);
   }
@@ -339,7 +339,7 @@ class GameState {
     if(move.to != move.from) {
       this.moveBall(move);
       this.moveLog.push(move);
-      console.debug('moveLog: ' + JSON.stringify(this.moveLog));
+      //console.debug('moveLog: ' + JSON.stringify(this.moveLog));
     }
   }
   

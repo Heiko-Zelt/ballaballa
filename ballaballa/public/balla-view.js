@@ -33,6 +33,7 @@ let ballPadding = 4;
 let tubeWidth = ballDiameter + ballPadding * 2;
 let tubeLowerCornerRadius = 26;
 let tubePadding = 8;
+let bounce = 20;
 
 let svgNS = 'http://www.w3.org/2000/svg';
 
@@ -52,13 +53,13 @@ function newGame() {
 	var numberOfColors = parseInt(document.getElementById("numberOfColors").value);
 	var numberOfExtraTubes = parseInt(document.getElementById("numberOfExtraTubes").value);
 	var tubeHeight = parseInt(document.getElementById("tubeHeight").value);
-	console.debug('numberOfColors: ' + numberOfColors + ', numberOfExtraTubes: ' + numberOfExtraTubes + ', tubeHeight: ' + tubeHeight);
+	//console.debug('numberOfColors: ' + numberOfColors + ', numberOfExtraTubes: ' + numberOfExtraTubes + ', tubeHeight: ' + tubeHeight);
 	originalGameState = new GameState(numberOfColors, numberOfExtraTubes, tubeHeight);
-	console.debug('originalGameState after constr: ' + JSON.stringify(originalGameState));
+	//console.debug('originalGameState after constr: ' + JSON.stringify(originalGameState));
 	originalGameState.newGame();
-	console.debug('originalGameState after newGame(): ' + JSON.stringify(originalGameState));
+	//console.debug('originalGameState after newGame(): ' + JSON.stringify(originalGameState));
 	gameState = originalGameState.clone();
-	console.debug('gameState: ' + JSON.stringify(gameState));
+	//console.debug('gameState: ' + JSON.stringify(gameState));
 }
 
 /**
@@ -83,36 +84,20 @@ function undoMove(move) {
 	console.debug('undo move from ' + move.from + ' to ' + move.to);
 
 	if (donorIndex == null) {
-		var fromRow = gameState.tubes[move.from].fillLevel;
-		console.debug('Ball anheben und einlochen in einer Animation');
+		//console.debug('Ball anheben und einlochen in einer Animation');
 		liftAndHoleBall(move);
 	} else {
 		if (donorIndex == move.from) {
-			console.debug('der richtige Ball schwebt schon');
+			//console.debug('der richtige Ball schwebt schon');
 			holeBall(move.to);
-			// globale Variable
-			//donorIndex = null;		
 		} else {
-			console.debug('der falsche Ball schwebt. 2 Animationen.');
+			//console.debug('der falsche Ball schwebt. 2 Animationen.');
 			dropBall(donorIndex);
 			liftAndHoleBall(move);
 		}
 	}
 }
 
-
-/**
- * Zweiter Teil eines Zuges, nämlich den Ball einlochen
- */
-function holeBall_old(to) {
-	console.debug('holeBall(to=' + to + ')');
-	var color = gameState.tubes[to].colorOfHighestBall();
-	var receiverBallId = ballId(to, gameState.tubes[to].fillLevel - 1);
-	console.debug('receiverBallId=' + receiverBallId);
-	var receiverElement = document.getElementById(receiverBallId);
-	receiverElement.classList.remove('ball0');
-	receiverElement.classList.add('ball' + color);
-}
 
 function randomIdentifier() {
 	return 'r' + Math.random().toString(36).substring(2, 15)
@@ -130,30 +115,30 @@ function liftBall(from) {
 
 	removeBall(donorIndex, donorRow);
 	removeAnimation('liftBallAnimation');
-	
+
 	var fromText = `  from \{\n    cy: ${ballY(donorRow)}px; \n  \}`
 	var toText = `  to \{\n    cy: ${ballRadius}px; \n  \}`
 	var keyframes = `@keyframes liftBallAnimation \{\n${fromText}\n${toText}\n\}`
 	var styleText = `${keyframes}\n`
-	console.debug(styleText);
+	//console.debug(styleText);
 
 	var styleElement = document.getElementById('liftStyle');
 	var node = document.createTextNode(styleText);
 	styleElement.innerHTML = '';
 	styleElement.appendChild(node);
 
-	console.debug('liftBall(from=' + from + ')');
-	console.debug('tube=' + JSON.stringify(gameState.tubes[from]));
+	//console.debug('liftBall(from=' + from + ')');
+	//console.debug('tube=' + JSON.stringify(gameState.tubes[from]));
 
 	var ball = createLiftedBall(from);
 	puzzle = document.getElementById('puzzleGroup');
-	
+
 	var boundingBoxId = 'tubeBoundingBox_' + from;
 	//console.debug('insert before boundingBoxId=' + boundingBoxId);
 	var boundingBox = document.getElementById(boundingBoxId);
 	//console.debug('insert before boundingBoxId=' + boundingBox);
-	puzzle.insertBefore(ball, boundingBox);	
-	
+	puzzle.insertBefore(ball, boundingBox);
+
 }
 
 /**
@@ -163,66 +148,36 @@ function liftAndHoleBall(move) {
 	var fromRow = gameState.tubes[move.from].fillLevel
 	var toRow = gameState.tubes[move.to].fillLevel - 1
 
-	console.debug('ball wegnehmen von ' + move.from + ', ' + fromRow);
+	//console.debug('ball wegnehmen von ' + move.from + ', ' + fromRow);
 	removeBall(move.from, fromRow);
 	removeAnimation('undoAnimation');
 
 	var ball = createBall(move.to, toRow);
 	ball.style.animationName = 'undoAnimation';
 	ball.style.animationDuration = '0.5s';
-	ball.style.animationTimingFunction = 'ease-out';
+	ball.style.animationTimingFunction = 'linear';
 	ball.style.animationFillMode = 'forwards';
 	puzzle = document.getElementById('puzzleGroup');
 	var boundingBoxId = 'tubeBoundingBox_' + move.to;
 	//console.debug('insert before boundingBoxId=' + boundingBoxId);
 	var boundingBox = document.getElementById(boundingBoxId);
 	//console.debug('insert before boundingBoxId=' + boundingBox);
-	puzzle.insertBefore(ball, boundingBox);	
+	puzzle.insertBefore(ball, boundingBox);
 
-	var fromText     = `  0% \{cx: ${ballX(move.from)}px; cy: ${ballY(fromRow)}px;\}`
-	var betweenText1 = `  33% \{cx: ${ballX(move.from)}px; cy: ${ballRadius}px;\}`
-	var betweenText2 = `  67% \{cx: ${ballX(move.to)}px; cy: ${ballRadius}px;\}`
-	var toText       = `  100% \{cx: ${ballX(move.to)}px; cy: ${ballY(toRow)}px;\}`
-	var keyframes = `@keyframes undoAnimation \{\n${fromText}\n${betweenText1}\n${betweenText2}\n${toText}\n\}`
+	var fromText = `  0% \{cx: ${ballX(move.from)}px; cy: ${ballY(fromRow)}px;\}`
+	var betweenText1 = `  26% \{cx: ${ballX(move.from)}px; cy: ${ballRadius}px;\}`
+	var betweenText2 = `  53% \{cx: ${ballX(move.to)}px; cy: ${ballRadius}px;\}`
+	var toText = `  80% \{cx: ${ballX(move.to)}px; cy: ${ballY(toRow)}px;\}`
+	var bounceText = `  90% \{cy: ${ballY(toRow) - bounce}px;\}`
+	var backText = `  100% \{cy: ${ballY(toRow)}px;\}`
+	var keyframes = `@keyframes undoAnimation \{\n${fromText}\n${betweenText1}\n${betweenText2}\n${toText}\n${bounceText}\n${backText}\n\}`
 	var styleText = `${keyframes}\n`
-	console.debug(styleText);
+	//console.debug(styleText);
 
 	var styleElement = document.getElementById('undoStyle');
 	var node = document.createTextNode(styleText);
 	styleElement.innerHTML = '';
 	styleElement.appendChild(node);
-}
-
-function liftBall_old(from) {
-	// Globale Variablen
-	donorIndex = from;
-
-	console.debug('liftBall(from=' + from + ')');
-	console.debug('tube=' + JSON.stringify(gameState.tubes[from]));
-
-	// Ball oben anzeigen
-	var lifted = document.getElementById('lifted_' + from);
-	var color = gameState.tubes[from].colorOfHighestBall();
-	var className = 'ball' + color;
-	console.debug('className=' + className);
-	lifted.classList.remove('ball0');
-	lifted.classList.add(className);
-	console.debug('lifted.classList' + JSON.stringify(lifted.classList));
-
-	// Ball unten nicht mehr anzeigen
-	donorRow = gameState.tubes[from].fillLevel - 1;
-	console.debug('donorRow=' + donorRow);
-	removeBall(from, donorRow);
-}
-
-
-/**
- * entfernt Klassen ball1, ball2, ..., ball13
- */
-function removeBallColorClass(elementToHide) {
-	for (var i = 1; i <= 13; i++) {
-		elementToHide.classList.remove('ball' + i);
-	}
 }
 
 /**
@@ -267,11 +222,6 @@ function removeBall(columnIndex, rowIndex) {
 	console.debug('removeBall(columnIndex=' + columnIndex + ', rowIndex=' + rowIndex + ')');
 	var ball = document.getElementById(ballId(columnIndex, rowIndex));
 	ball.parentNode.removeChild(ball);
-
-	/*
-	removeBallColorClass(hidden);
-	hidden.classList.add('ball0');
-	*/
 }
 
 /**
@@ -283,11 +233,6 @@ function removeLiftedBall() {
 	if (ball != null) {
 		ball.parentNode.removeChild(ball);
 	}
-	/*
-	removeBallColorClass(lifted);
-	lifted.classList.add('ball0');
-	console.debug('lifted.classList' + JSON.stringify(lifted.classList));
-	*/
 }
 
 /**
@@ -300,16 +245,18 @@ function removeLiftedBall() {
  * verwendet die globalen Variablen donorIndex und donorRow.
  */
 function dropBall() {
-	console.debug('dropBall() donorIndex=' + donorIndex + ', donorRow=' + donorRow);
+	//console.debug('dropBall() donorIndex=' + donorIndex + ', donorRow=' + donorRow);
 
 	removeLiftedBall();
 	removeAnimation('dropBallAnimation');
 
-	var fromText = `  from \{\n    cy: ${ballRadius}px; \n  \}`
-	var toText = `  to \{\n    cy: ${ballY(donorRow)}px; \n  \}`
-	var keyframes = `@keyframes dropBallAnimation \{\n${fromText}\n${toText}\n\}`
+	var fromText = `  0% \{cy: ${ballRadius}px;\}`;
+	var toText = `  80% \{cy: ${ballY(donorRow)}px;\}`;
+	var bounceText = `  90% \{cy: ${ballY(donorRow) - bounce}px;\}`;
+	var backText = `  100% \{cy: ${ballY(donorRow)}px;\}`;
+	var keyframes = `@keyframes dropBallAnimation \{\n${fromText}\n${toText}\n${bounceText}\n${backText}\n\}`;
 	var styleText = `${keyframes}\n`
-	console.debug(styleText);
+	//console.debug(styleText);
 	var styleElement = document.getElementById('dropStyle');
 	var node = document.createTextNode(styleText);
 	styleElement.innerHTML = '';
@@ -318,7 +265,7 @@ function dropBall() {
 	var ball = createBall(donorIndex, donorRow);
 	ball.style.animationName = 'dropBallAnimation';
 	ball.style.animationDuration = '0.3s';
-	ball.style.animationTimingFunction = 'ease-out';
+	ball.style.animationTimingFunction = 'linear';
 	ball.style.animationFillMode = 'forwards';
 	puzzle = document.getElementById('puzzleGroup');
 	var boundingBoxId = 'tubeBoundingBox_' + donorIndex;
@@ -336,18 +283,20 @@ function dropBall() {
  * Zweiter Teil eines Zuges, nämlich den Ball einlochen
  */
 function holeBall(to) {
-	console.debug('holeBall() donorIndex=' + donorIndex + ', donorRow=' + donorRow);
+	//console.debug('holeBall() donorIndex=' + donorIndex + ', donorRow=' + donorRow);
 	removeLiftedBall();
 	removeAnimation('holeBallAnimation');
 
 	var toRow = gameState.tubes[to].fillLevel - 1;
 
 	var fromText = `  0% \{cx: ${ballX(donorIndex)}px; cy: ${ballRadius}px;\}`
-	var betweenText =  `  50% \{cx: ${ballX(to)}px; cy: ${ballRadius}px;\}`
-	var toText = `  100% \{cx: ${ballX(to)}px; cy: ${ballY(toRow)}px;\}`
-	var keyframes = `@keyframes holeBallAnimation \{\n${fromText}\n${betweenText}\n${toText}\n\}`
+	var betweenText = `  40% \{cx: ${ballX(to)}px; cy: ${ballRadius}px;\}`
+	var toText = `  80% \{cy: ${ballY(toRow)}px;\}`
+	var bounceText = `  90% \{cy: ${ballY(toRow) - bounce}px;\}`
+	var backText = `  100% \{cy: ${ballY(toRow)}px;\}`
+	var keyframes = `@keyframes holeBallAnimation \{\n${fromText}\n${betweenText}\n${toText}\n${bounceText}\n${backText}\n\}`
 	var styleText = `${keyframes}\n`
-	console.debug(styleText);
+	//console.debug(styleText);
 	var styleElement = document.getElementById('holeStyle');
 	var node = document.createTextNode(styleText);
 	styleElement.innerHTML = '';
@@ -356,18 +305,26 @@ function holeBall(to) {
 	var ball = createBall(to, toRow);
 	ball.style.animationName = 'holeBallAnimation';
 	ball.style.animationDuration = '0.4s';
-	ball.style.animationTimingFunction = 'ease-out';
+	ball.style.animationTimingFunction = 'linear';
 	ball.style.animationFillMode = 'forwards';
 	puzzle = document.getElementById('puzzleGroup');
 	var boundingBox = document.getElementById('tubeBoundingBox_' + to);
 	puzzle.insertBefore(ball, boundingBox);
-	//puzzle.appendChild(ball);
 
 	// globale Variablen
 	donorIndex = null;
 	donorRow = null;
 }
 
+/**
+ * mehrere Fälle:
+ *   Ball schwebt nicht und...
+ *     Röhre leer -> keine Aktion
+ *     Röhre nicht leer -> Ball anheben 
+ *   Ball schwebt und...
+ *     Zug ist erlaubt -> normaler Zug (Sonderfall: Quelle und Ziel kann auch gleich sein)
+ *     Zug ist nicht erlaubt -> Ballwechsel
+ */
 function clickOnTube(clickedCol) {
 	console.debug('clicked column: ' + clickedCol);
 	if (donorIndex == null) {
@@ -385,12 +342,14 @@ function clickOnTube(clickedCol) {
 				undoButton.disabled = false;
 			}
 			if (gameState.isSolved()) {
-				alert('😀 Genial! Sie haben das Puzzle gelöst. 😀');
+				//setTimeout(function() {
+					alert('😀 Genial! Sie haben das Puzzle gelöst. 😀');
+				//}, 0);
 				newGame();
 				resetGameView();
 			}
 		} else {
-			console.debug('Wechsel!!!!');
+			//console.debug('Wechsel');
 			// Ball wieder runter
 			dropBall(donorIndex);
 			// dafür anderer Ball hoch
@@ -412,7 +371,7 @@ function ballId(col, row) {
 }
 
 function createBall(col, row) {
-	console.debug(`createBall(col=${col}, row=${row})`);
+	//console.debug(`createBall(col=${col}, row=${row})`);
 	var ball = document.createElementNS(svgNS, 'circle');
 	ball.setAttributeNS(null, 'cx', ballX(col));
 	ball.setAttributeNS(null, 'cy', ballY(row));
@@ -449,20 +408,14 @@ function createLiftedBall(from) {
 }
 
 function createTube(col) {
-	var tube = gameState.tubes[col];
 	var tubePath = document.createElementNS(svgNS, 'path');
 	var left = col * (tubeWidth + tubePadding);
-	//var right = (col + 1) * tubeWidth + col * tubePadding
 	var upperLeft = `${left},${ballDiameter}`;
-	//var lowerLeft = `${left},${boardHeight}`
-	//var lowerRight = `${right},${boardHeight}`
-	//var upperRight = `${right},${ballHeight}`
-	//path = `M${upperLeft} v${tubeHeight - tubeLowerCornerRadius} l${tubeLowerCornerRadius},${tubeLowerCornerRadius} h${tubeWidth - tubeLowerCornerRadius} v${tubeHeight * -1} z`
-	verticalHeight = tubeHeight() - tubeLowerCornerRadius;
-	archLeft = `a${tubeLowerCornerRadius},${tubeLowerCornerRadius} 0 0 0 ${tubeLowerCornerRadius},${tubeLowerCornerRadius}`;
-	archRight = `a${tubeLowerCornerRadius},${tubeLowerCornerRadius} 0 0 0 ${tubeLowerCornerRadius},${tubeLowerCornerRadius * -1}`;
-	path = `M${upperLeft} v${verticalHeight} ${archLeft} h${tubeWidth - tubeLowerCornerRadius * 2} ${archRight} v${verticalHeight * -1} z`;
-	console.debug(path);
+	var verticalHeight = tubeHeight() - tubeLowerCornerRadius;
+	var archLeft = `a${tubeLowerCornerRadius},${tubeLowerCornerRadius} 0 0 0 ${tubeLowerCornerRadius},${tubeLowerCornerRadius}`;
+	var archRight = `a${tubeLowerCornerRadius},${tubeLowerCornerRadius} 0 0 0 ${tubeLowerCornerRadius},${tubeLowerCornerRadius * -1}`;
+	var path = `M${upperLeft} v${verticalHeight} ${archLeft} h${tubeWidth - tubeLowerCornerRadius * 2} ${archRight} v${verticalHeight * -1} z`;
+	//console.debug(path);
 	tubePath.setAttributeNS(null, 'd', path);
 	tubePath.classList.add('tube');
 	return tubePath;
@@ -546,15 +499,15 @@ function scaleBoard() {
 
 	var maxBoardHeight = window.innerHeight - header.offsetHeight - 20;
 	var maxBoardWidth = window.innerWidth - 20;
-	console.debug('maxBoardHeight: ' + maxBoardHeight);
-	console.debug('puzzleGroup: ' + puzzleGroup);
+	//console.debug('maxBoardHeight: ' + maxBoardHeight);
+	//console.debug('puzzleGroup: ' + puzzleGroup);
 	var maxScalingHeight = maxBoardHeight / boardHeight();
 	var maxScalingWidth = maxBoardWidth / boardWidth();
 	var scalingFactor = Math.min(maxScalingHeight, maxScalingWidth);
 
 	var newBoardWidth = boardWidth() * scalingFactor;
 	var newBoardHeight = boardHeight() * scalingFactor;
-	console.debug('newBoardWidth: ' + newBoardWidth);
+	//console.debug('newBoardWidth: ' + newBoardWidth);
 
 	svg.setAttributeNS(null, 'height', newBoardHeight);
 	svg.setAttributeNS(null, 'width', newBoardWidth);
@@ -562,7 +515,7 @@ function scaleBoard() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-	console.debug('document loaded');
+	console.info('document loaded');
 
 	var startButton = document.getElementById('startButton');
 	startButton.addEventListener('click', function() {
@@ -579,7 +532,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	var undoButton = document.getElementById('undoButton');
 	undoButton.addEventListener('click', function() {
 		if (gameState.moveLog.length == 0) {
-			alert('nicht möglich');
+			alert('Zug zurück ist nicht möglich!');
 			return;
 		}
 		var backwardMove = gameState.undoLastMove();
@@ -596,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	});
 
 	var startForm = document.getElementById('startForm');
-	startForm.addEventListener('submit', function() {
+	startForm.addEventListener('submit', function(event) {
 		console.debug('form submit');
 		// don't submit form and reload page
 		event.preventDefault();
@@ -608,5 +561,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	newGame();
 	resetGameView();
-
 });
