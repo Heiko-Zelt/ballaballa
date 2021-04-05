@@ -4,7 +4,7 @@
  
 class GameState {
   constructor(numberOfColors, numberOfExtraTubes, tubeHeight) {
-    console.log('GameState.constructor(numberOfColors=' + numberOfColors + ', numberOfExtraTubes=' + numberOfExtraTubes + ', tubeHeight=' + tubeHeight +')');
+    console.debug('GameState.constructor(numberOfColors=' + numberOfColors + ', numberOfExtraTubes=' + numberOfExtraTubes + ', tubeHeight=' + tubeHeight +')');
     this.numberOfColors = numberOfColors;
     this.numberOfExtraTubes = numberOfExtraTubes;
     this.tubeHeight = tubeHeight;
@@ -14,7 +14,7 @@ class GameState {
   }
   
   clone() {
-    console.log('GameState.clone()');
+    console.debug('GameState.clone()');
     var miniMe = new GameState(this.numberOfColors, this.numberOfExtraTubes, this.tubeHeight);
     for(var i = 0; i < this.numberOfTubes; i++) {
       miniMe.tubes[i] = this.tubes[i].clone();
@@ -24,7 +24,7 @@ class GameState {
   }
   
   newGame() {
-    console.log('GameState.newGame()');
+    console.debug('GameState.newGame()');
     this.initTubes();
     this.randomizeBallsMany();
     //this.emptyExtraTubes()
@@ -49,31 +49,31 @@ class GameState {
     */
   isSolved() {
 	for(var i = 0; i < this.numberOfTubes; i++) {
-      console.log('i=' + i);
+      console.debug('i=' + i);
 	  if(!(this.tubes[i].isEmpty() || this.tubes[i].isSolved())) {
-		console.log('tube ' + i + ' is not empty or solved');
+		console.debug('tube ' + i + ' is not empty or solved');
         return false;
       }
-      console.log('tube ' + i + ' is not solved');
+      console.debug('tube ' + i + ' is not solved');
 	}
-	console.log('puzzle is solved');
+	console.debug('puzzle is solved');
 	return true;
   }
   
   initTubes() {
-    console.log('initTubes()');
+    console.debug('initTubes()');
     // gefüllte Röhren
     for(var i = 0; i < this.numberOfColors; i++) {
       // Roehre mit Index 0 hat Farbe 1, etc...
       var initialColor = i + 1;
-      //console.log('initialColor: ' + initialColor)
+      //console.debug('initialColor: ' + initialColor)
       this.tubes[i] = new Tube(this.tubeHeight);
       this.tubes[i].fillWithOneColor(initialColor);
     }
     // leere Röhren
     for(var i = this.numberOfColors; i < this.numberOfTubes; i++) {
       // keine Farbe
-      //console.log('initialColor: 0')
+      //console.debug('initialColor: 0')
       this.tubes[i] = new Tube(this.tubeHeight);
       this.tubes[i].fillWithOneColor(0);
     }
@@ -83,7 +83,7 @@ class GameState {
    * vertauscht Röhren untereinander zufällig
    */
   mixTubes() {
-    console.log('mixTubes()')
+    console.debug('mixTubes()')
     for(var c = 0; c < this.numberOfTubes * 3; c++) {
       var i = this.randomInt(this.numberOfTubes);
       var j = this.randomInt(this.numberOfTubes);
@@ -105,7 +105,7 @@ class GameState {
    * Warning! This leads to easy solvable puzzles.
    */
   randomizeBalls() {
-    console.log('randomizeBalls()');
+    console.debug('randomizeBalls()');
     
     /* Es ist egal, ob erst reverse Geber oder Nehmer ausgewählt wird.
      * Es besteht keine Abhängigkeit zur Ball-Farbe.
@@ -118,7 +118,7 @@ class GameState {
     var i;
     for(i = 0; i < maxMoves; i++) { 
       var rdcs = this.reverseDonorCandidates();
-      //console.log('rdcs.length=' + rdcs.length)
+      //console.debug('rdcs.length=' + rdcs.length)
       if(rdcs.length <= 1) {
         break;
       }
@@ -127,7 +127,7 @@ class GameState {
       var reverseReceiver = this.selectOneRandomly(rrcs);
       this.moveBall(reverseDonor, reverseReceiver);
     }
-    console.log('reverse moves: ' + i);
+    console.debug('reverse moves: ' + i);
   }
   
   /**
@@ -139,7 +139,7 @@ class GameState {
     var i;
     for(i = 0; i < maxMoves; i++) {
       var possibleMoves = this.allPossibleBackwardMoves(lastMove);
-      console.log('i: ' + i + ', possibleMoves: ' + JSON.stringify(possibleMoves));
+      console.debug('i: ' + i + ', possibleMoves: ' + JSON.stringify(possibleMoves));
       if(possibleMoves.length == 0) {
         break;
       }
@@ -147,13 +147,13 @@ class GameState {
       if(lottery.length == 0) {
         break;
       }
-      //console.log('i: ' + i + ', lottery: ' + JSON.stringify(lottery))
+      //console.debug('i: ' + i + ', lottery: ' + JSON.stringify(lottery))
       var move = this.selectOneRandomly(lottery);
-      console.log('selected move ' + JSON.stringify(move));
+      console.debug('selected move ' + JSON.stringify(move));
       this.moveBall(move);
       lastMove = move;
     }
-    console.log('randomize finished with number of backward moves: ' + i);
+    console.debug('randomize finished with number of backward moves: ' + i);
   }
   
   /**
@@ -194,7 +194,7 @@ class GameState {
 	for(var i = 0; i < allMoves.length; i++) {
 	  var move = allMoves[i];
       var rate = this.rateBackwardMove(move);
-      console.log('rate: ' + rate);
+      console.debug('rate: ' + rate);
       this.multiPush(lots, move, rate);
     }
     return lots;
@@ -211,34 +211,34 @@ class GameState {
    *   aber nicht alle in der Ziel-Röhre gleichfarbig sind (kompliziert)
    */
   rateBackwardMove(move) {
-    console.log('move ' + JSON.stringify(move));
+    console.debug('move ' + JSON.stringify(move));
 
     // Zug in leere Röhre
 	if(this.tubes[move.to].isEmpty()) {
-	  console.log('Zug in leere Röhre');
+	  console.debug('Zug in leere Röhre');
       return 50;
     }
 
     // Zug auf gleichfarbigen Ball
     var ballColor = this.tubes[move.from].colorOfHighestBall();
     var targetColor = this.tubes[move.to].colorOfHighestBall();
-    // console.log('ballColor ' + ballColor + '== targetColor ' + targetColor + '?');
+    // console.debug('ballColor ' + ballColor + '== targetColor ' + targetColor + '?');
     if(targetColor == ballColor) {
-      console.log('Zug auf gleichfarbigen Ball');
+      console.debug('Zug auf gleichfarbigen Ball');
       return 50
     }
 
     // Zug auf einfarbige Säule anderer Farbe (weitere Unterteilung nach Höhe der Säule)
     var n = this.tubes[move.to].unicolor();
-    console.log('unicolor: ' + n);
+    console.debug('unicolor: ' + n);
     if(n > 1) {
 	  var points = this.tubeHeight - n - 1;
-	  console.log('Zug auf einfarbige Säule anderer Farbe :-( Punkte: ' + points);
+	  console.debug('Zug auf einfarbige Säule anderer Farbe :-( Punkte: ' + points);
       return points;
     }
 
     // Zug auf andersfarbigen Ball, der darunter keinen gleichfarbigen Ball hat
-    console.log('Zug auf andersfarbigen Ball, der darunter keinen gleichfarbigen Ball hat');
+    console.debug('Zug auf andersfarbigen Ball, der darunter keinen gleichfarbigen Ball hat');
     return 40;
   }
 
@@ -247,7 +247,7 @@ class GameState {
    * sehr einfaches Kriterium
    */
   isGoodBackwardMove(move) {
-    //console.log('move: ' + JSON.stringify(move))
+    //console.debug('move: ' + JSON.stringify(move))
     return !this.tubes[move.to].isUnicolor();
   }
   
@@ -269,9 +269,9 @@ class GameState {
    * liefert ein zufälliges Array Element
    */
   selectOneRandomly(a) {
-    //console.log('selectOneRandomly from ' + JSON.stringify(a))
+    //console.debug('selectOneRandomly from ' + JSON.stringify(a))
     var randomIndex = this.randomInt(a.length);
-    //console.log('randomIndex=' + randomIndex)
+    //console.debug('randomIndex=' + randomIndex)
     return a[randomIndex];
   }
   
@@ -281,14 +281,14 @@ class GameState {
    */  
   reverseReceiverCandidates() {
     var a = [];
-    //console.log('this.numberOfTubes=' + this.numberOfTubes)
+    //console.debug('this.numberOfTubes=' + this.numberOfTubes)
     for(var i = 0; i < this.numberOfTubes; i++) {
-      //console.log('reverse receiver candidate?' + i)
+      //console.debug('reverse receiver candidate?' + i)
       if(this.tubes[i].isReverseReceiverCandidate()) {
         a.push(i);
       }
     }
-    //console.log('reverse receiver candidates = ' + JSON.stringify(a))
+    //console.debug('reverse receiver candidates = ' + JSON.stringify(a))
     return a;
   }
   
@@ -298,14 +298,14 @@ class GameState {
    */
   reverseDonorCandidates() {
     var a = [];
-    //console.log('this.numberOfTubes=' + this.numberOfTubes)
+    //console.debug('this.numberOfTubes=' + this.numberOfTubes)
     for(var i = 0; i < this.numberOfTubes; i++) {
-      //console.log('reverse donor candidate?' + i)
+      //console.debug('reverse donor candidate?' + i)
       if(this.tubes[i].isReverseDonorCandidate()) {
         a.push(i);
       }
     }
-    //console.log('reverse donor candidates = ' + JSON.stringify(a))
+    //console.debug('reverse donor candidates = ' + JSON.stringify(a))
     return a;
   }
   
@@ -325,7 +325,7 @@ class GameState {
    * (the tubes may be the same, but that doesn't make much sense)
    */  
   moveBall(move) {
-	console.log('moveBall(' + JSON.stringify(move) + ')');
+	console.debug('moveBall(' + JSON.stringify(move) + ')');
 	var color = this.tubes[move.from].removeBall();
     this.tubes[move.to].addBall(color);
   }
@@ -339,7 +339,7 @@ class GameState {
     if(move.to != move.from) {
       this.moveBall(move);
       this.moveLog.push(move);
-      console.log('moveLog: ' + JSON.stringify(this.moveLog));
+      console.debug('moveLog: ' + JSON.stringify(this.moveLog));
     }
   }
   
@@ -420,11 +420,17 @@ class Tube {
   }
   
   addBall(color) {
+	if(this.isFull()) {
+		throw 'tube is already full';
+	}
     this.cells[this.fillLevel] = color;
     this.fillLevel++;
   }
   
   removeBall() {
+	if(this.isEmpty()) {
+		throw 'tube is already empty';
+	}
     this.fillLevel--;
     var color = this.cells[this.fillLevel];
     // 0 ist die Farbe für leere Zelle
@@ -434,7 +440,7 @@ class Tube {
   
   colorOfHighestBall() {
 	var color = this.cells[this.fillLevel - 1];
-	//console.log('fillLevel: ' + this.fillLevel + ', color of highest ball:' + color)
+	//console.debug('fillLevel: ' + this.fillLevel + ', color of highest ball:' + color)
     return color;
   }
   
@@ -477,22 +483,22 @@ class Tube {
    */
    unicolor() {
      if(this.isEmpty()) {
-	   //console.log('unicolor: Sonderfall leer')
+	   //console.debug('unicolor: Sonderfall leer')
        return 0;
      }
      if(this.fillLevel == 1) {
-	   //console.log('unicolor: Sonderfall 1')
+	   //console.debug('unicolor: Sonderfall 1')
 	   return 1;
      }
      var color = this.cells[0];
      var i;
      for(i = 1; i < this.fillLevel; i++) {
        if(this.cells[i] != color) {
-	     //console.log('unicolor: unterschiedlich')
+	     //console.debug('unicolor: unterschiedlich')
          return 0;
        }
      }
-     //console.log('unicolor: i=' + i)
+     //console.debug('unicolor: i=' + i)
      return i;
    }
 

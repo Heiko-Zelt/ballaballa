@@ -24,22 +24,41 @@ let donorIndex = null;
 let donorRow = null;
 
 /**
- * original game board / puzzle size without scaling
+ * positions of original game board / puzzle without scaling
  */
-let boardWidth = null;
-let boardHeight = null;
+let ballRadius = 40;
+let ballRadiusInside = ballRadius - 0.5;
+let ballDiameter = ballRadius * 2;
+let ballPadding = 4;
+let tubeWidth = ballDiameter + ballPadding * 2;
+let tubeLowerCornerRadius = 26;
+let tubePadding = 8;
+
+let svgNS = 'http://www.w3.org/2000/svg';
+
+function tubeHeight() {
+	return ballDiameter * gameState.tubeHeight + ballPadding;
+}
+
+function boardWidth() {
+	return gameState.numberOfTubes * tubeWidth + (gameState.numberOfTubes - 1) * tubePadding
+}
+
+function boardHeight() {
+	return (gameState.tubeHeight + 1) * ballDiameter + ballPadding;
+}
 
 function newGame() {
 	var numberOfColors = parseInt(document.getElementById("numberOfColors").value);
 	var numberOfExtraTubes = parseInt(document.getElementById("numberOfExtraTubes").value);
 	var tubeHeight = parseInt(document.getElementById("tubeHeight").value);
-	console.log('numberOfColors: ' + numberOfColors + ', numberOfExtraTubes: ' + numberOfExtraTubes + ', tubeHeight: ' + tubeHeight);
+	console.debug('numberOfColors: ' + numberOfColors + ', numberOfExtraTubes: ' + numberOfExtraTubes + ', tubeHeight: ' + tubeHeight);
 	originalGameState = new GameState(numberOfColors, numberOfExtraTubes, tubeHeight);
-	console.log('originalGameState after constr: ' + JSON.stringify(originalGameState));
+	console.debug('originalGameState after constr: ' + JSON.stringify(originalGameState));
 	originalGameState.newGame();
-	console.log('originalGameState after newGame(): ' + JSON.stringify(originalGameState));
+	console.debug('originalGameState after newGame(): ' + JSON.stringify(originalGameState));
 	gameState = originalGameState.clone();
-	console.log('gameState: ' + JSON.stringify(gameState));
+	console.debug('gameState: ' + JSON.stringify(gameState));
 }
 
 /**
@@ -49,90 +68,153 @@ function newGame() {
  * from == donorIndex
  */
 function normalMove(move) {
-	console.log('normal move from ' + move.from + ' to ' + move.to);
-
-	// Der Zug wurde schon ausgeführt. Deswegen ergibt sich die Farbe aus dem Zielfeld.
-	console.log('Erhöhten Ball nicht mehr anzeigen.');
-	removeLiftedBall();
+	console.debug('normal move from ' + move.from + ' to ' + move.to);
 
 	// Ball einlochen
 	holeBall(move.to);
-
-	// globale Variable
-	donorIndex = null;
 }
 
 /**
- * move backwards.
- * a ball may be in lifted state or not.
+ * Move backwards. 3 cases:
+ * A ball may be in lifted state or not.
+ * A lifted ball may be the right or the wrong ball.
  */
 function undoMove(move) {
-	console.log('undo move from ' + move.from + ' to ' + move.to);
-	if (donorIndex != null) {
-		console.log('Quell-Ball ist oben. Zug abbrechen. Erhöhten Ball fallen lassen.');
-		dropBall(move.to);
+	console.debug('undo move from ' + move.from + ' to ' + move.to);
+
+	if (donorIndex == null) {
+		var fromRow = gameState.tubes[move.from].fillLevel;
+		console.debug('Ball anheben und einlochen in einer Animation');
+		liftAndHoleBall(move);
+	} else {
+		if (donorIndex == move.from) {
+			console.debug('der richtige Ball schwebt schon');
+			holeBall(move.to);
+			// globale Variable
+			//donorIndex = null;		
+		} else {
+			console.debug('der falsche Ball schwebt. 2 Animationen.');
+			dropBall(donorIndex);
+			liftAndHoleBall(move);
+		}
 	}
-	var row = gameState.tubes[move.from].fillLevel;
-	console.log('ball wegnehmen von ' + move.from + ', ' + row);
-	removeBall(move.from, row);
-
-	// Ball einlochen
-	holeBall(move.to);
-
-	// globale Variable
-	donorIndex = null;
 }
+
 
 /**
  * Zweiter Teil eines Zuges, nämlich den Ball einlochen
  */
-function holeBall(to) {
-	console.log('holeBall(to=' + to + ')');
+function holeBall_old(to) {
+	console.debug('holeBall(to=' + to + ')');
 	var color = gameState.tubes[to].colorOfHighestBall();
-	var receiverBallId = 'ball_' + to + '_' + (gameState.tubes[to].fillLevel - 1);
-	console.log('receiverBallId=' + receiverBallId);
+	var receiverBallId = ballId(to, gameState.tubes[to].fillLevel - 1);
+	console.debug('receiverBallId=' + receiverBallId);
 	var receiverElement = document.getElementById(receiverBallId);
 	receiverElement.classList.remove('ball0');
 	receiverElement.classList.add('ball' + color);
 }
 
+function randomIdentifier() {
+	return 'r' + Math.random().toString(36).substring(2, 15)
+}
+
+/**
+ * from gibt die Spalte an
+ */
 function liftBall(from) {
+	//removeStyles();
+
 	// Globale Variablen
 	donorIndex = from;
 	donorRow = gameState.tubes[from].fillLevel - 1;
 
-	console.log('liftBall(from=' + from + ')');
-	console.log('tube=' + JSON.stringify(gameState.tubes[from]));
+	removeBall(donorIndex, donorRow);
+	removeAnimation('liftBallAnimation');
+	
+	var fromText = `  from \{\n    cy: ${ballY(donorRow)}px; \n  \}`
+	var toText = `  to \{\n    cy: ${ballRadius}px; \n  \}`
+	var keyframes = `@keyframes liftBallAnimation \{\n${fromText}\n${toText}\n\}`
+	var styleText = `${keyframes}\n`
+	console.debug(styleText);
+
+	var styleElement = document.getElementById('liftStyle');
+	var node = document.createTextNode(styleText);
+	styleElement.innerHTML = '';
+	styleElement.appendChild(node);
+
+	console.debug('liftBall(from=' + from + ')');
+	console.debug('tube=' + JSON.stringify(gameState.tubes[from]));
+
+	var ball = createLiftedBall(from);
+	puzzle = document.getElementById('puzzleGroup');
+	
+	var boundingBoxId = 'tubeBoundingBox_' + from;
+	//console.debug('insert before boundingBoxId=' + boundingBoxId);
+	var boundingBox = document.getElementById(boundingBoxId);
+	//console.debug('insert before boundingBoxId=' + boundingBox);
+	puzzle.insertBefore(ball, boundingBox);	
+	
+}
+
+/**
+ * Rückwärtszug
+ */
+function liftAndHoleBall(move) {
+	var fromRow = gameState.tubes[move.from].fillLevel
+	var toRow = gameState.tubes[move.to].fillLevel - 1
+
+	console.debug('ball wegnehmen von ' + move.from + ', ' + fromRow);
+	removeBall(move.from, fromRow);
+	removeAnimation('undoAnimation');
+
+	var ball = createBall(move.to, toRow);
+	ball.style.animationName = 'undoAnimation';
+	ball.style.animationDuration = '0.5s';
+	ball.style.animationTimingFunction = 'ease-out';
+	ball.style.animationFillMode = 'forwards';
+	puzzle = document.getElementById('puzzleGroup');
+	var boundingBoxId = 'tubeBoundingBox_' + move.to;
+	//console.debug('insert before boundingBoxId=' + boundingBoxId);
+	var boundingBox = document.getElementById(boundingBoxId);
+	//console.debug('insert before boundingBoxId=' + boundingBox);
+	puzzle.insertBefore(ball, boundingBox);	
+
+	var fromText     = `  0% \{cx: ${ballX(move.from)}px; cy: ${ballY(fromRow)}px;\}`
+	var betweenText1 = `  33% \{cx: ${ballX(move.from)}px; cy: ${ballRadius}px;\}`
+	var betweenText2 = `  67% \{cx: ${ballX(move.to)}px; cy: ${ballRadius}px;\}`
+	var toText       = `  100% \{cx: ${ballX(move.to)}px; cy: ${ballY(toRow)}px;\}`
+	var keyframes = `@keyframes undoAnimation \{\n${fromText}\n${betweenText1}\n${betweenText2}\n${toText}\n\}`
+	var styleText = `${keyframes}\n`
+	console.debug(styleText);
+
+	var styleElement = document.getElementById('undoStyle');
+	var node = document.createTextNode(styleText);
+	styleElement.innerHTML = '';
+	styleElement.appendChild(node);
+}
+
+function liftBall_old(from) {
+	// Globale Variablen
+	donorIndex = from;
+
+	console.debug('liftBall(from=' + from + ')');
+	console.debug('tube=' + JSON.stringify(gameState.tubes[from]));
 
 	// Ball oben anzeigen
 	var lifted = document.getElementById('lifted_' + from);
 	var color = gameState.tubes[from].colorOfHighestBall();
 	var className = 'ball' + color;
-	console.log('className=' + className);
+	console.debug('className=' + className);
 	lifted.classList.remove('ball0');
 	lifted.classList.add(className);
-	console.log('lifted.classList' + JSON.stringify(lifted.classList));
+	console.debug('lifted.classList' + JSON.stringify(lifted.classList));
 
 	// Ball unten nicht mehr anzeigen
 	donorRow = gameState.tubes[from].fillLevel - 1;
-	console.log('donorRow=' + donorRow);
+	console.debug('donorRow=' + donorRow);
 	removeBall(from, donorRow);
 }
 
-/**
- * bewegt einen Ball von der erhöhten Position zur Normal-Position zurück.
- * weil ein Zug abgebrochen wird oder
- * es sich um einen Undo-Zug handelt und noch ein Ball in der Luft schwebte.
- * Vorsicht: verwendet die globale Variable donorIndex
- */
-function dropBall() {
-	console.log('dropBall() donorIndex=' + donorIndex + ', donorRow=' + donorRow);
-
-	removeLiftedBall();
-
-	// Ball unten wieder anzeigen
-	reapearBall();
-}
 
 /**
  * entfernt Klassen ball1, ball2, ..., ball13
@@ -144,31 +226,106 @@ function removeBallColorClass(elementToHide) {
 }
 
 /**
+ * entfernt alle styles von allen Bällen (normale und angehobener) mit angegebem Animations-Name.
+ * also auch eine eventuell vohandene Animation
+ * Beim Klick auf "falsche" Röhre muss Ball anheben und senken gleichzeitig erfolgen.
+ * 2 Animationen gleichzeitig!
+ */
+function removeAnimations(names) {
+	allBalls = document.getElementsByClassName('balla');
+	for (var i = 0; i < allBalls.length; i++) {
+		var ball = allBalls[i];
+		var style = ball.style;
+		if (style != null) {
+			if (names.includes(style.animationName)) {
+				ball.removeAttribute('style');
+			}
+		}
+	}
+}
+
+function removeAnimation(name) {
+	allBalls = document.getElementsByClassName('balla');
+	for (var i = 0; i < allBalls.length; i++) {
+		var ball = allBalls[i];
+		var style = ball.style;
+		if (style != null) {
+			if (style.animationName != null) {
+				if (name == style.animationName) {
+					ball.removeAttribute('style');
+				}
+			}
+		}
+	}
+}
+
+/**
  * Ball unten nicht mehr anzeigen
  * weil er angehoben wurde oder bei einem Undo-Move
  */
 function removeBall(columnIndex, rowIndex) {
-	console.log('removeBall(columnIndex=' + columnIndex + ', rowIndex=' + rowIndex + ')');
-	var hidden = document.getElementById('ball_' + columnIndex + '_' + rowIndex);
+	console.debug('removeBall(columnIndex=' + columnIndex + ', rowIndex=' + rowIndex + ')');
+	var ball = document.getElementById(ballId(columnIndex, rowIndex));
+	ball.parentNode.removeChild(ball);
+
+	/*
 	removeBallColorClass(hidden);
 	hidden.classList.add('ball0');
+	*/
 }
 
 /**
+ * erhöhten Ball nicht mehr anzeigen
+ */
+function removeLiftedBall() {
+	console.debug('removeLiftedBall()');
+	var ball = document.getElementById('liftedBall');
+	if (ball != null) {
+		ball.parentNode.removeChild(ball);
+	}
+	/*
+	removeBallColorClass(lifted);
+	lifted.classList.add('ball0');
+	console.debug('lifted.classList' + JSON.stringify(lifted.classList));
+	*/
+}
+
+/**
+ * bewegt einen Ball von der erhöhten Position zur Normal-Position zurück.
+ * weil ein Zug abgebrochen wird oder
+ * es sich um einen Undo-Zug handelt und noch ein Ball in der Luft schwebte.
+ * Vorsicht: verwendet die globale Variable donorIndex
+ *
  * ein Ball wird wieder angezeigt, nachdem er erhöht war.
  * verwendet die globalen Variablen donorIndex und donorRow.
  */
-function reapearBall() {
-	console.log('>>>>>> reapearBall() donorIndex=' + donorIndex);
-	var color = gameState.tubes[donorIndex].cells[donorRow];
+function dropBall() {
+	console.debug('dropBall() donorIndex=' + donorIndex + ', donorRow=' + donorRow);
 
-	var ballId = `ball_${donorIndex}_${donorRow}`;
-	console.log('ballId=' + ballId);
-	var hidden = document.getElementById(ballId);
-	hidden.classList.remove('ball0');
+	removeLiftedBall();
+	removeAnimation('dropBallAnimation');
 
-	var className = 'ball' + color;
-	hidden.classList.add(className);
+	var fromText = `  from \{\n    cy: ${ballRadius}px; \n  \}`
+	var toText = `  to \{\n    cy: ${ballY(donorRow)}px; \n  \}`
+	var keyframes = `@keyframes dropBallAnimation \{\n${fromText}\n${toText}\n\}`
+	var styleText = `${keyframes}\n`
+	console.debug(styleText);
+	var styleElement = document.getElementById('dropStyle');
+	var node = document.createTextNode(styleText);
+	styleElement.innerHTML = '';
+	styleElement.appendChild(node);
+
+	var ball = createBall(donorIndex, donorRow);
+	ball.style.animationName = 'dropBallAnimation';
+	ball.style.animationDuration = '0.3s';
+	ball.style.animationTimingFunction = 'ease-out';
+	ball.style.animationFillMode = 'forwards';
+	puzzle = document.getElementById('puzzleGroup');
+	var boundingBoxId = 'tubeBoundingBox_' + donorIndex;
+	//console.debug('insert before boundingBoxId=' + boundingBoxId);
+	var boundingBox = document.getElementById(boundingBoxId);
+	//console.debug('insert before boundingBoxId=' + boundingBox);
+	puzzle.insertBefore(ball, boundingBox);
 
 	// globale Variablen
 	donorIndex = null;
@@ -176,26 +333,50 @@ function reapearBall() {
 }
 
 /**
- * erhöhten Ball nicht mehr anzeigen
- * verwendet die globale Variable donorIndex
+ * Zweiter Teil eines Zuges, nämlich den Ball einlochen
  */
-function removeLiftedBall() {
-	console.log('removeLiftedBall() donorIndex=' + donorIndex);
-	var lifted = document.getElementById('lifted_' + donorIndex);
-	removeBallColorClass(lifted);
-	lifted.classList.add('ball0');
-	console.log('lifted.classList' + JSON.stringify(lifted.classList));
+function holeBall(to) {
+	console.debug('holeBall() donorIndex=' + donorIndex + ', donorRow=' + donorRow);
+	removeLiftedBall();
+	removeAnimation('holeBallAnimation');
+
+	var toRow = gameState.tubes[to].fillLevel - 1;
+
+	var fromText = `  0% \{cx: ${ballX(donorIndex)}px; cy: ${ballRadius}px;\}`
+	var betweenText =  `  50% \{cx: ${ballX(to)}px; cy: ${ballRadius}px;\}`
+	var toText = `  100% \{cx: ${ballX(to)}px; cy: ${ballY(toRow)}px;\}`
+	var keyframes = `@keyframes holeBallAnimation \{\n${fromText}\n${betweenText}\n${toText}\n\}`
+	var styleText = `${keyframes}\n`
+	console.debug(styleText);
+	var styleElement = document.getElementById('holeStyle');
+	var node = document.createTextNode(styleText);
+	styleElement.innerHTML = '';
+	styleElement.appendChild(node);
+
+	var ball = createBall(to, toRow);
+	ball.style.animationName = 'holeBallAnimation';
+	ball.style.animationDuration = '0.4s';
+	ball.style.animationTimingFunction = 'ease-out';
+	ball.style.animationFillMode = 'forwards';
+	puzzle = document.getElementById('puzzleGroup');
+	var boundingBox = document.getElementById('tubeBoundingBox_' + to);
+	puzzle.insertBefore(ball, boundingBox);
+	//puzzle.appendChild(ball);
+
+	// globale Variablen
+	donorIndex = null;
+	donorRow = null;
 }
 
 function clickOnTube(clickedCol) {
-	console.log('clicked column: ' + clickedCol);
+	console.debug('clicked column: ' + clickedCol);
 	if (donorIndex == null) {
 		if (!gameState.tubes[clickedCol].isEmpty()) {
 			liftBall(clickedCol);
 		}
 	} else {
 		if (gameState.isMoveAllowed(donorIndex, clickedCol)) {
-			console.log('move from ' + donorIndex + ' to ' + clickedCol);
+			console.debug('move from ' + donorIndex + ' to ' + clickedCol);
 			var move = new Move(donorIndex, clickedCol);
 			gameState.moveBallAndLog(move);
 			normalMove(move);
@@ -209,7 +390,7 @@ function clickOnTube(clickedCol) {
 				resetGameView();
 			}
 		} else {
-			console.log('Wechsel!!!!');
+			console.debug('Wechsel!!!!');
 			// Ball wieder runter
 			dropBall(donorIndex);
 			// dafür anderer Ball hoch
@@ -218,30 +399,110 @@ function clickOnTube(clickedCol) {
 	}
 }
 
+function ballX(col) {
+	return col * (tubeWidth + tubePadding) + ballRadius + ballPadding
+}
+
+function ballY(row) {
+	return (gameState.tubeHeight - row) * ballDiameter + ballRadius
+}
+
+function ballId(col, row) {
+	return `ball_${col}_${row}`
+}
+
+function createBall(col, row) {
+	console.debug(`createBall(col=${col}, row=${row})`);
+	var ball = document.createElementNS(svgNS, 'circle');
+	ball.setAttributeNS(null, 'cx', ballX(col));
+	ball.setAttributeNS(null, 'cy', ballY(row));
+	ball.setAttributeNS(null, 'r', ballRadiusInside);
+	ball.id = ballId(col, row);
+	var tube = gameState.tubes[col];
+	var className = 'ball' + tube.cells[row]; // color
+	//console.debug('className: ', className)
+	ball.classList.add(className);
+	ball.classList.add('balla');
+	return ball;
+}
+
+function createLiftedBall(from) {
+	var ball = document.createElementNS(svgNS, 'circle');
+	ball.setAttributeNS(null, 'cx', ballX(from));
+	ball.setAttributeNS(null, 'cy', ballRadius);
+	ball.setAttributeNS(null, 'r', ballRadiusInside);
+	ball.id = 'liftedBall';
+	var tube = gameState.tubes[from];
+	var color = tube.colorOfHighestBall();
+	var className = 'ball' + color
+	//console.debug('className: ', className)
+	ball.classList.add(className);
+	ball.classList.add('balla');
+
+	//var animationName = randomIdentifier();
+	//var styleText = 'animation-name: ballAnimation; animation-duration: 0.4s; animation-timing-function: ease-out; animation-fill-mode: forwards;';
+	ball.style.animationName = 'liftBallAnimation';
+	ball.style.animationDuration = '0.3s';
+	ball.style.animationTimingFunction = 'ease-out';
+	ball.style.animationFillMode = 'forwards';
+	return ball;
+}
+
+function createTube(col) {
+	var tube = gameState.tubes[col];
+	var tubePath = document.createElementNS(svgNS, 'path');
+	var left = col * (tubeWidth + tubePadding);
+	//var right = (col + 1) * tubeWidth + col * tubePadding
+	var upperLeft = `${left},${ballDiameter}`;
+	//var lowerLeft = `${left},${boardHeight}`
+	//var lowerRight = `${right},${boardHeight}`
+	//var upperRight = `${right},${ballHeight}`
+	//path = `M${upperLeft} v${tubeHeight - tubeLowerCornerRadius} l${tubeLowerCornerRadius},${tubeLowerCornerRadius} h${tubeWidth - tubeLowerCornerRadius} v${tubeHeight * -1} z`
+	verticalHeight = tubeHeight() - tubeLowerCornerRadius;
+	archLeft = `a${tubeLowerCornerRadius},${tubeLowerCornerRadius} 0 0 0 ${tubeLowerCornerRadius},${tubeLowerCornerRadius}`;
+	archRight = `a${tubeLowerCornerRadius},${tubeLowerCornerRadius} 0 0 0 ${tubeLowerCornerRadius},${tubeLowerCornerRadius * -1}`;
+	path = `M${upperLeft} v${verticalHeight} ${archLeft} h${tubeWidth - tubeLowerCornerRadius * 2} ${archRight} v${verticalHeight * -1} z`;
+	console.debug(path);
+	tubePath.setAttributeNS(null, 'd', path);
+	tubePath.classList.add('tube');
+	return tubePath;
+}
+
+function createBoundingBox(col) {
+	var tubeBoundingBox = document.createElementNS(svgNS, 'rect');
+	var left = col * (tubeWidth + tubePadding);
+	tubeBoundingBox.setAttribute('x', left);
+	tubeBoundingBox.setAttribute('y', 0);
+	tubeBoundingBox.setAttribute('width', tubeWidth);
+	tubeBoundingBox.setAttribute('height', tubeHeight() + ballDiameter);
+	tubeBoundingBox.id = 'tubeBoundingBox_' + col;
+	tubeBoundingBox.classList.add('tubeBoundingBox');
+	tubeBoundingBox.addEventListener('click', function() {
+		var clickedCol = parseInt(this.id.split('_')[1]);
+		clickOnTube(clickedCol);
+	});
+	return tubeBoundingBox
+}
+
 function resetGameView() {
-	var ballRadius = 40;
-	var ballRadiusInside = ballRadius - 0.5;
-	var ballDiameter = ballRadius * 2;
-	var ballPadding = 4;
-	var tubeWidth = ballDiameter + ballPadding * 2;
-	var tubeHeight = ballDiameter * gameState.tubeHeight;
-	var tubeLowerCornerRadius = 26;
-	var tubePadding = 8;
-	boardWidth = gameState.numberOfTubes * tubeWidth + (gameState.numberOfTubes - 1) * tubePadding;
-	boardHeight = (gameState.tubeHeight + 1) * ballDiameter + ballPadding;
-
-	var svgNS = 'http://www.w3.org/2000/svg';
 	var svg = document.createElementNS(svgNS, 'svg');
-	svg.id='puzzleImage';
-	svg.setAttribute('width', boardWidth);
-	svg.setAttribute('height', boardHeight);
-	
-	var puzzle = document.createElementNS(svgNS, 'g');
-	puzzle.id='puzzleGroup';
-	svg.appendChild(puzzle);
-	
+	svg.id = 'puzzleImage';
+	svg.setAttribute('width', boardWidth());
+	svg.setAttribute('height', boardHeight());
 
-	/*
+	var styleIds = ['liftStyle', 'dropStyle', 'holeStyle', 'undoStyle']
+	for (var i = styleIds.length - 1; i >= 0; i--) {
+		styleId = styleIds[i]
+		var styleElement = document.createElementNS(svgNS, 'style');
+		styleElement.id = styleId
+		svg.appendChild(styleElement);
+	}
+
+	var puzzle = document.createElementNS(svgNS, 'g');
+	puzzle.id = 'puzzleGroup';
+	svg.appendChild(puzzle);
+
+	/* background
 	var rect = document.createElementNS(svgNS, 'rect')
 	rect.setAttribute('x', 0)
 	rect.setAttribute('y', 0)
@@ -251,58 +512,21 @@ function resetGameView() {
 	svg.appendChild(rect)
 	*/
 
+	// erst die Röhren als Hintergrund zeichnen
+	for (var col = 0; col < gameState.numberOfTubes; col++) {
+		var tube = createTube(col);
+		puzzle.appendChild(tube);
+	}
+
+	// dann die Bälle und ihre zugehörige Röhren-Bounding-Box
 	for (var col = 0; col < gameState.numberOfTubes; col++) {
 		var tube = gameState.tubes[col];
-		var tubePath = document.createElementNS(svgNS, 'path');
-		var left = col * (tubeWidth + tubePadding);
-		//var right = (col + 1) * tubeWidth + col * tubePadding
-		var upperLeft = `${left},${ballDiameter}`;
-		//var lowerLeft = `${left},${boardHeight}`
-		//var lowerRight = `${right},${boardHeight}`
-		//var upperRight = `${right},${ballHeight}`
-		//path = `M${upperLeft} v${tubeHeight - tubeLowerCornerRadius} l${tubeLowerCornerRadius},${tubeLowerCornerRadius} h${tubeWidth - tubeLowerCornerRadius} v${tubeHeight * -1} z`
-		verticalHeight = tubeHeight - tubeLowerCornerRadius + ballPadding;
-		archLeft = `a${tubeLowerCornerRadius},${tubeLowerCornerRadius} 0 0 0 ${tubeLowerCornerRadius},${tubeLowerCornerRadius}`;
-		archRight = `a${tubeLowerCornerRadius},${tubeLowerCornerRadius} 0 0 0 ${tubeLowerCornerRadius},${tubeLowerCornerRadius * -1}`;
-		path = `M${upperLeft} v${verticalHeight} ${archLeft} h${tubeWidth - tubeLowerCornerRadius * 2} ${archRight} v${verticalHeight * -1} z`;
-		console.log(path);
-		tubePath.setAttributeNS(null, 'd', path);
-		tubePath.classList.add('tube');
-		puzzle.appendChild(tubePath);
-
-		var liftedBall = document.createElementNS(svgNS, 'circle');
-		liftedBall.setAttributeNS(null, 'cx', col * (tubeWidth + tubePadding) + ballRadius + ballPadding);
-		liftedBall.setAttributeNS(null, 'cy', ballRadius);
-		liftedBall.setAttributeNS(null, 'r', ballRadiusInside);
-		liftedBall.id = 'lifted_' + col;
-		liftedBall.classList.add('balla');
-		liftedBall.classList.add('ball0'); // invisible
-		puzzle.appendChild(liftedBall);
-
-		for (var row = (gameState.tubeHeight - 1); row >= 0; row--) {
-			var ball = document.createElementNS(svgNS, 'circle');
-			ball.setAttributeNS(null, 'cx', col * (tubeWidth + tubePadding) + ballRadius + ballPadding);
-			ball.setAttributeNS(null, 'cy', (gameState.tubeHeight - row) * ballDiameter + ballRadius);
-			ball.setAttributeNS(null, 'r', ballRadiusInside);
-			ball.id = `ball_${col}_${row}`;
-			className = 'ball' + tube.cells[row]; // color
-			//console.log('className: ', className)
-			ball.classList.add(className);
-			ball.classList.add('balla');
+		for (var row = (tube.fillLevel - 1); row >= 0; row--) {
+			var ball = createBall(col, row);
 			puzzle.appendChild(ball);
 		}
 
-		var tubeBoundingBox = document.createElementNS(svgNS, 'rect');
-		tubeBoundingBox.setAttribute('x', left);
-		tubeBoundingBox.setAttribute('y', ballDiameter);
-		tubeBoundingBox.setAttribute('width', tubeWidth);
-		tubeBoundingBox.setAttribute('height', tubeHeight);
-		tubeBoundingBox.id = 'tubeBoundingBox_' + col;
-		tubeBoundingBox.classList.add('tubeBoundingBox');
-		tubeBoundingBox.addEventListener('click', function() {
-			var clickedCol = parseInt(this.id.split('_')[1]);
-			clickOnTube(clickedCol);
-		})
+		var tubeBoundingBox = createBoundingBox(col);
 		puzzle.appendChild(tubeBoundingBox);
 	}
 
@@ -318,19 +542,19 @@ function resetGameView() {
 function scaleBoard() {
 	var header = document.getElementById('kopf');
 	var svg = document.getElementById('puzzleImage');
-	var puzzleGroup = document.getElementById('puzzleGroup');	
+	var puzzleGroup = document.getElementById('puzzleGroup');
 
 	var maxBoardHeight = window.innerHeight - header.offsetHeight - 20;
 	var maxBoardWidth = window.innerWidth - 20;
-	console.log('maxBoardHeight: ' + maxBoardHeight);
-	console.log('puzzleGroup: ' + puzzleGroup);
-	var maxScalingHeight = maxBoardHeight / boardHeight;
-	var maxScalingWidth = maxBoardWidth / boardWidth;
+	console.debug('maxBoardHeight: ' + maxBoardHeight);
+	console.debug('puzzleGroup: ' + puzzleGroup);
+	var maxScalingHeight = maxBoardHeight / boardHeight();
+	var maxScalingWidth = maxBoardWidth / boardWidth();
 	var scalingFactor = Math.min(maxScalingHeight, maxScalingWidth);
-	
-	var newBoardWidth = boardWidth * scalingFactor;
-	var newBoardHeight = boardHeight * scalingFactor;
-	console.log('newBoardWidth: ' + newBoardWidth);
+
+	var newBoardWidth = boardWidth() * scalingFactor;
+	var newBoardHeight = boardHeight() * scalingFactor;
+	console.debug('newBoardWidth: ' + newBoardWidth);
 
 	svg.setAttributeNS(null, 'height', newBoardHeight);
 	svg.setAttributeNS(null, 'width', newBoardWidth);
@@ -338,7 +562,7 @@ function scaleBoard() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-	console.log('document loaded');
+	console.debug('document loaded');
 
 	var startButton = document.getElementById('startButton');
 	startButton.addEventListener('click', function() {
@@ -373,7 +597,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	var startForm = document.getElementById('startForm');
 	startForm.addEventListener('submit', function() {
-		console.log('form submit');
+		console.debug('form submit');
 		// don't submit form and reload page
 		event.preventDefault();
 	});
