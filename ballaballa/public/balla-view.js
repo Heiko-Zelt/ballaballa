@@ -27,6 +27,7 @@ let donorRow = null;
  * positions of original game board / puzzle without scaling
  */
 let ballRadius = 40;
+//let ballRadiusInside = ballRadius; 
 let ballRadiusInside = ballRadius - 0.5;
 let ballDiameter = ballRadius * 2;
 let ballPadding = 4;
@@ -69,7 +70,7 @@ function newGame() {
  * from == donorIndex
  */
 function normalMove(move) {
-	console.debug('normal move from ' + move.from + ' to ' + move.to);
+	//console.debug('normal move from ' + move.from + ' to ' + move.to);
 
 	// Ball einlochen
 	holeBall(move.to);
@@ -81,7 +82,7 @@ function normalMove(move) {
  * A lifted ball may be the right or the wrong ball.
  */
 function undoMove(move) {
-	console.debug('undo move from ' + move.from + ' to ' + move.to);
+	//console.debug('undo move from ' + move.from + ' to ' + move.to);
 
 	if (donorIndex == null) {
 		//console.debug('Ball anheben und einlochen in einer Animation');
@@ -114,7 +115,6 @@ function liftBall(from) {
 	donorRow = gameState.tubes[from].fillLevel - 1;
 
 	removeBall(donorIndex, donorRow);
-	removeAnimation('liftBallAnimation');
 
 	var fromText = `  from \{\n    cy: ${ballY(donorRow)}px; \n  \}`
 	var toText = `  to \{\n    cy: ${ballRadius}px; \n  \}`
@@ -131,6 +131,8 @@ function liftBall(from) {
 	//console.debug('tube=' + JSON.stringify(gameState.tubes[from]));
 
 	var ball = createLiftedBall(from);
+	removeClass('liftBallAnimation');
+	ball.classList.add('liftBallAnimation');
 	puzzle = document.getElementById('puzzleGroup');
 
 	var boundingBoxId = 'tubeBoundingBox_' + from;
@@ -138,7 +140,6 @@ function liftBall(from) {
 	var boundingBox = document.getElementById(boundingBoxId);
 	//console.debug('insert before boundingBoxId=' + boundingBox);
 	puzzle.insertBefore(ball, boundingBox);
-
 }
 
 /**
@@ -150,19 +151,6 @@ function liftAndHoleBall(move) {
 
 	//console.debug('ball wegnehmen von ' + move.from + ', ' + fromRow);
 	removeBall(move.from, fromRow);
-	removeAnimation('undoAnimation');
-
-	var ball = createBall(move.to, toRow);
-	ball.style.animationName = 'undoAnimation';
-	ball.style.animationDuration = '0.5s';
-	ball.style.animationTimingFunction = 'linear';
-	ball.style.animationFillMode = 'forwards';
-	puzzle = document.getElementById('puzzleGroup');
-	var boundingBoxId = 'tubeBoundingBox_' + move.to;
-	//console.debug('insert before boundingBoxId=' + boundingBoxId);
-	var boundingBox = document.getElementById(boundingBoxId);
-	//console.debug('insert before boundingBoxId=' + boundingBox);
-	puzzle.insertBefore(ball, boundingBox);
 
 	var fromText = `  0% \{cx: ${ballX(move.from)}px; cy: ${ballY(fromRow)}px;\}`
 	var betweenText1 = `  26% \{cx: ${ballX(move.from)}px; cy: ${ballRadius}px;\}`
@@ -170,7 +158,7 @@ function liftAndHoleBall(move) {
 	var toText = `  80% \{cx: ${ballX(move.to)}px; cy: ${ballY(toRow)}px;\}`
 	var bounceText = `  90% \{cy: ${ballY(toRow) - bounce}px;\}`
 	var backText = `  100% \{cy: ${ballY(toRow)}px;\}`
-	var keyframes = `@keyframes undoAnimation \{\n${fromText}\n${betweenText1}\n${betweenText2}\n${toText}\n${bounceText}\n${backText}\n\}`
+	var keyframes = `@keyframes undoBallKeyframes \{\n${fromText}\n${betweenText1}\n${betweenText2}\n${toText}\n${bounceText}\n${backText}\n\}`
 	var styleText = `${keyframes}\n`
 	//console.debug(styleText);
 
@@ -178,6 +166,17 @@ function liftAndHoleBall(move) {
 	var node = document.createTextNode(styleText);
 	styleElement.innerHTML = '';
 	styleElement.appendChild(node);
+
+	var ball = createBall(move.to, toRow);
+	removeClass('undoBallAnimation');
+	ball.classList.add('undoBallAnimation');
+
+	puzzle = document.getElementById('puzzleGroup');
+	var boundingBoxId = 'tubeBoundingBox_' + move.to;
+	//console.debug('insert before boundingBoxId=' + boundingBoxId);
+	var boundingBox = document.getElementById(boundingBoxId);
+	//console.debug('insert before boundingBoxId=' + boundingBox);
+	puzzle.insertBefore(ball, boundingBox);
 }
 
 /**
@@ -186,6 +185,7 @@ function liftAndHoleBall(move) {
  * Beim Klick auf "falsche" Röhre muss Ball anheben und senken gleichzeitig erfolgen.
  * 2 Animationen gleichzeitig!
  */
+/*
 function removeAnimations(names) {
 	allBalls = document.getElementsByClassName('balla');
 	for (var i = 0; i < allBalls.length; i++) {
@@ -213,13 +213,28 @@ function removeAnimation(name) {
 		}
 	}
 }
+*/
+
+/**
+ * Entfernt bei allen Nodes eine CSS-Klasse.
+ * Nützlich um von allen Bällen eine Klasse mit Animation zu entfernen,
+ * weil die gleiche Animation jetzt für einen anderen Ball ablaufen soll.
+ */
+function removeClass(name) {
+	var elements = document.getElementsByClassName(name);
+	if (elements != null) {
+		for (var i = 0; i < elements.length; i++) {
+			elements[i].classList.remove(name);
+		}
+	}
+}
 
 /**
  * Ball unten nicht mehr anzeigen
  * weil er angehoben wurde oder bei einem Undo-Move
  */
 function removeBall(columnIndex, rowIndex) {
-	console.debug('removeBall(columnIndex=' + columnIndex + ', rowIndex=' + rowIndex + ')');
+	//console.debug('removeBall(columnIndex=' + columnIndex + ', rowIndex=' + rowIndex + ')');
 	var ball = document.getElementById(ballId(columnIndex, rowIndex));
 	ball.parentNode.removeChild(ball);
 }
@@ -228,7 +243,7 @@ function removeBall(columnIndex, rowIndex) {
  * erhöhten Ball nicht mehr anzeigen
  */
 function removeLiftedBall() {
-	console.debug('removeLiftedBall()');
+	//console.debug('removeLiftedBall()');
 	var ball = document.getElementById('liftedBall');
 	if (ball != null) {
 		ball.parentNode.removeChild(ball);
@@ -248,13 +263,13 @@ function dropBall() {
 	//console.debug('dropBall() donorIndex=' + donorIndex + ', donorRow=' + donorRow);
 
 	removeLiftedBall();
-	removeAnimation('dropBallAnimation');
+	//removeAnimation('dropBallAnimation');
 
 	var fromText = `  0% \{cy: ${ballRadius}px;\}`;
 	var toText = `  80% \{cy: ${ballY(donorRow)}px;\}`;
 	var bounceText = `  90% \{cy: ${ballY(donorRow) - bounce}px;\}`;
 	var backText = `  100% \{cy: ${ballY(donorRow)}px;\}`;
-	var keyframes = `@keyframes dropBallAnimation \{\n${fromText}\n${toText}\n${bounceText}\n${backText}\n\}`;
+	var keyframes = `@keyframes dropBallKeyframes \{\n${fromText}\n${toText}\n${bounceText}\n${backText}\n\}`;
 	var styleText = `${keyframes}\n`
 	//console.debug(styleText);
 	var styleElement = document.getElementById('dropStyle');
@@ -263,10 +278,8 @@ function dropBall() {
 	styleElement.appendChild(node);
 
 	var ball = createBall(donorIndex, donorRow);
-	ball.style.animationName = 'dropBallAnimation';
-	ball.style.animationDuration = '0.3s';
-	ball.style.animationTimingFunction = 'linear';
-	ball.style.animationFillMode = 'forwards';
+	removeClass('dropBallAnimation');
+	ball.classList.add('dropBallAnimation')
 	puzzle = document.getElementById('puzzleGroup');
 	var boundingBoxId = 'tubeBoundingBox_' + donorIndex;
 	//console.debug('insert before boundingBoxId=' + boundingBoxId);
@@ -285,7 +298,6 @@ function dropBall() {
 function holeBall(to) {
 	//console.debug('holeBall() donorIndex=' + donorIndex + ', donorRow=' + donorRow);
 	removeLiftedBall();
-	removeAnimation('holeBallAnimation');
 
 	var toRow = gameState.tubes[to].fillLevel - 1;
 
@@ -294,7 +306,7 @@ function holeBall(to) {
 	var toText = `  80% \{cy: ${ballY(toRow)}px;\}`
 	var bounceText = `  90% \{cy: ${ballY(toRow) - bounce}px;\}`
 	var backText = `  100% \{cy: ${ballY(toRow)}px;\}`
-	var keyframes = `@keyframes holeBallAnimation \{\n${fromText}\n${betweenText}\n${toText}\n${bounceText}\n${backText}\n\}`
+	var keyframes = `@keyframes holeBallKeyframes \{\n${fromText}\n${betweenText}\n${toText}\n${bounceText}\n${backText}\n\}`
 	var styleText = `${keyframes}\n`
 	//console.debug(styleText);
 	var styleElement = document.getElementById('holeStyle');
@@ -303,10 +315,9 @@ function holeBall(to) {
 	styleElement.appendChild(node);
 
 	var ball = createBall(to, toRow);
-	ball.style.animationName = 'holeBallAnimation';
-	ball.style.animationDuration = '0.4s';
-	ball.style.animationTimingFunction = 'linear';
-	ball.style.animationFillMode = 'forwards';
+	removeClass('holeBallAnimation');
+	ball.classList.add('holeBallAnimation');
+
 	puzzle = document.getElementById('puzzleGroup');
 	var boundingBox = document.getElementById('tubeBoundingBox_' + to);
 	puzzle.insertBefore(ball, boundingBox);
@@ -326,14 +337,14 @@ function holeBall(to) {
  *     Zug ist nicht erlaubt -> Ballwechsel
  */
 function clickOnTube(clickedCol) {
-	console.debug('clicked column: ' + clickedCol);
+	//console.debug('clicked column: ' + clickedCol);
 	if (donorIndex == null) {
 		if (!gameState.tubes[clickedCol].isEmpty()) {
 			liftBall(clickedCol);
 		}
 	} else {
 		if (gameState.isMoveAllowed(donorIndex, clickedCol)) {
-			console.debug('move from ' + donorIndex + ' to ' + clickedCol);
+			//console.debug('move from ' + donorIndex + ' to ' + clickedCol);
 			var move = new Move(donorIndex, clickedCol);
 			gameState.moveBallAndLog(move);
 			normalMove(move);
@@ -343,7 +354,7 @@ function clickOnTube(clickedCol) {
 			}
 			if (gameState.isSolved()) {
 				//setTimeout(function() {
-					alert('😀 Genial! Sie haben das Puzzle gelöst. 😀');
+				alert('😀 Genial! Sie haben das Puzzle gelöst. 😀');
 				//}, 0);
 				newGame();
 				resetGameView();
@@ -397,13 +408,6 @@ function createLiftedBall(from) {
 	//console.debug('className: ', className)
 	ball.classList.add(className);
 	ball.classList.add('balla');
-
-	//var animationName = randomIdentifier();
-	//var styleText = 'animation-name: ballAnimation; animation-duration: 0.4s; animation-timing-function: ease-out; animation-fill-mode: forwards;';
-	ball.style.animationName = 'liftBallAnimation';
-	ball.style.animationDuration = '0.3s';
-	ball.style.animationTimingFunction = 'ease-out';
-	ball.style.animationFillMode = 'forwards';
 	return ball;
 }
 
@@ -550,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	var startForm = document.getElementById('startForm');
 	startForm.addEventListener('submit', function(event) {
-		console.debug('form submit');
+		//console.debug('form submit');
 		// don't submit form and reload page
 		event.preventDefault();
 	});

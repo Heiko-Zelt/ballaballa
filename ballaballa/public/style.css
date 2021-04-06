@@ -1,27 +1,24 @@
 @charset "UTF-8";
 
-* {
-	margin: 0;
-	padding: 0;
-}
-
 body {
 	text-align: center;
+	margin: 0;
+}
+
+header {
 	font-family: sans-serif;
-	margin: 0;
-	padding: 0;
 }
 
-header, main {
+h1 {
 	margin: 0;
-	padding: 0;
-	border: 0;
 }
 
+/*
 .balla {
-    stroke: white;
+    /*stroke: white;
     stroke-width: 2;
 }
+*/
 
 .tube {
 	fill: #e6e6e6;;
@@ -74,4 +71,32 @@ header, main {
 
 .ball13 {
 	fill: olive;
+}
+
+.liftBallAnimation {
+	animation-name: liftBallAnimation;
+	animation-duration: 0.3s;
+	animation-timing-function: linear;
+	animation-fill-mode: forwards;
+}
+
+.dropBallAnimation {
+	animation-name: dropBallKeyframes;
+	animation-duration: 0.3s;
+	animation-timing-function: linear;
+	animation-fill-mode: forwards;
+}
+
+.holeBallAnimation {
+	animation-name: holeBallKeyframes;
+	animation-duration: 0.4s;
+	animation-timing-function: linear;
+	animation-fill-mode: forwards';
+}
+
+.undoBallAnimation {
+	animation-name: undoBallKeyframes;
+	animation-duration: 0.5s;
+	animation-timing-function: linear;
+	animation-fill-mode: forwards;
 }
