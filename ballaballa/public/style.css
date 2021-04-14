@@ -21,7 +21,7 @@ h1 {
 */
 
 .tube {
-	fill: #e6e6e6;;
+	fill: #e6e6e6;
 }
 
 /* invisible in front of balls but clickable */
@@ -37,7 +37,7 @@ h1 {
 	fill: green;
 }
 .ball3 {
-	fill: #2020ff;
+	fill: #4040ff;
 }
 .ball4 {
 	fill: red;

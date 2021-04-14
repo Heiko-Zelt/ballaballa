@@ -515,8 +515,8 @@ class Tube {
 	  if(this.cells[i] != color) {
 		return false;
 	  }
-      return true;
 	}
+    return true;
   }
 }
 

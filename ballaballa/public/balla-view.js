@@ -300,9 +300,13 @@ function holeBall(to) {
 	removeLiftedBall();
 
 	var toRow = gameState.tubes[to].fillLevel - 1;
+    var distance0 = Math.abs(to - donorIndex)
+    var distance1 = gameState.tubeHeight - toRow
+    var fract = distance0 / (distance0 + distance1)
+    var percent = fract * 80
 
 	var fromText = `  0% \{cx: ${ballX(donorIndex)}px; cy: ${ballRadius}px;\}`
-	var betweenText = `  40% \{cx: ${ballX(to)}px; cy: ${ballRadius}px;\}`
+	var betweenText = `  ${percent}% \{cx: ${ballX(to)}px; cy: ${ballRadius}px;\}`
 	var toText = `  80% \{cy: ${ballY(toRow)}px;\}`
 	var bounceText = `  90% \{cy: ${ballY(toRow) - bounce}px;\}`
 	var backText = `  100% \{cy: ${ballY(toRow)}px;\}`
