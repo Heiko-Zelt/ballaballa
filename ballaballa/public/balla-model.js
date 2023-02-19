@@ -1,6 +1,6 @@
 "use strict";
-var GameState = (function () {
-    function GameState(numberOfColors, numberOfExtraTubes, tubeHeight) {
+class GameState {
+    constructor(numberOfColors, numberOfExtraTubes, tubeHeight) {
         console.debug('GameState.constructor(numberOfColors=' + numberOfColors + ', numberOfExtraTubes=' + numberOfExtraTubes + ', tubeHeight=' + tubeHeight + ')');
         this.numberOfColors = numberOfColors;
         this.numberOfExtraTubes = numberOfExtraTubes;
@@ -9,7 +9,7 @@ var GameState = (function () {
         this.tubes = new Array(this.numberOfTubes);
         this.moveLog = [];
     }
-    GameState.prototype.clone = function () {
+    clone() {
         console.debug('GameState.clone()');
         var miniMe = new GameState(this.numberOfColors, this.numberOfExtraTubes, this.tubeHeight);
         for (var i = 0; i < this.numberOfTubes; i++) {
@@ -17,29 +17,29 @@ var GameState = (function () {
         }
         miniMe.moveLog = this.moveLog;
         return miniMe;
-    };
-    GameState.prototype.newGame = function () {
+    }
+    newGame() {
         console.debug('GameState.newGame()');
         this.initTubes();
         this.randomizeBallsMany();
         this.mixTubes();
-    };
-    GameState.prototype.cheat = function () {
+    }
+    cheat() {
         var n = new Tube(this.tubeHeight);
         n.fillWithOneColor(0);
         this.tubes.push(n);
         this.numberOfTubes++;
         this.numberOfExtraTubes++;
-    };
-    GameState.prototype.isSolved = function () {
+    }
+    isSolved() {
         for (var i = 0; i < this.numberOfTubes; i++) {
             if (!(this.tubes[i].isEmpty() || this.tubes[i].isSolved())) {
                 return false;
             }
         }
         return true;
-    };
-    GameState.prototype.initTubes = function () {
+    }
+    initTubes() {
         console.debug('initTubes()');
         for (var i = 0; i < this.numberOfColors; i++) {
             var initialColor = i + 1;
@@ -50,21 +50,21 @@ var GameState = (function () {
             this.tubes[i] = new Tube(this.tubeHeight);
             this.tubes[i].fillWithOneColor(0);
         }
-    };
-    GameState.prototype.mixTubes = function () {
+    }
+    mixTubes() {
         console.debug('mixTubes()');
         for (var c = 0; c < this.numberOfTubes * 3; c++) {
             var i = this.randomInt(this.numberOfTubes);
             var j = this.randomInt(this.numberOfTubes);
             this.swapTubes(i, j);
         }
-    };
-    GameState.prototype.swapTubes = function (index1, index2) {
+    }
+    swapTubes(index1, index2) {
         var tmp = this.tubes[index1];
         this.tubes[index1] = this.tubes[index2];
         this.tubes[index2] = tmp;
-    };
-    GameState.prototype.randomizeBalls = function () {
+    }
+    randomizeBalls() {
         var maxMoves = this.numberOfTubes * this.tubeHeight;
         var i;
         for (i = 0; i < maxMoves; i++) {
@@ -78,8 +78,8 @@ var GameState = (function () {
             this.moveBall(new Move(reverseDonor, reverseReceiver));
         }
         console.debug('reverse moves: ' + i);
-    };
-    GameState.prototype.randomizeBallsMany = function () {
+    }
+    randomizeBallsMany() {
         var lastMove = null;
         var maxMoves = this.numberOfTubes * this.tubeHeight * 3;
         var i;
@@ -96,8 +96,8 @@ var GameState = (function () {
             this.moveBall(move);
             lastMove = move;
         }
-    };
-    GameState.prototype.allPossibleBackwardMoves = function (lastMove) {
+    }
+    allPossibleBackwardMoves(lastMove) {
         var allMoves = [];
         for (var from = 0; from < this.numberOfTubes; from++) {
             if (this.tubes[from].isReverseDonorCandidate()) {
@@ -114,13 +114,13 @@ var GameState = (function () {
             }
         }
         return allMoves;
-    };
-    GameState.prototype.multiPush = function (array, element, number) {
+    }
+    multiPush(array, element, number) {
         for (var i = 0; i < number; i++) {
             array.push(element);
         }
-    };
-    GameState.prototype.lottery = function (allMoves) {
+    }
+    lottery(allMoves) {
         var lots = [];
         for (var i = 0; i < allMoves.length; i++) {
             var move = allMoves[i];
@@ -128,8 +128,8 @@ var GameState = (function () {
             this.multiPush(lots, move, rate);
         }
         return lots;
-    };
-    GameState.prototype.rateBackwardMove = function (move) {
+    }
+    rateBackwardMove(move) {
         if (this.tubes[move.to].isEmpty()) {
             return 50;
         }
@@ -144,12 +144,12 @@ var GameState = (function () {
             return points;
         }
         return 40;
-    };
-    GameState.prototype.selectOneRandomly = function (a) {
+    }
+    selectOneRandomly(a) {
         var randomIndex = this.randomInt(a.length);
         return a[randomIndex];
-    };
-    GameState.prototype.reverseReceiverCandidates = function () {
+    }
+    reverseReceiverCandidates() {
         var a = [];
         for (var i = 0; i < this.numberOfTubes; i++) {
             if (this.tubes[i].isReverseReceiverCandidate()) {
@@ -157,8 +157,8 @@ var GameState = (function () {
             }
         }
         return a;
-    };
-    GameState.prototype.reverseDonorCandidates = function () {
+    }
+    reverseDonorCandidates() {
         var a = [];
         for (var i = 0; i < this.numberOfTubes; i++) {
             if (this.tubes[i].isReverseDonorCandidate()) {
@@ -166,23 +166,23 @@ var GameState = (function () {
             }
         }
         return a;
-    };
-    GameState.prototype.emptyExtraTubes = function () {
-    };
-    GameState.prototype.randomInt = function (max) {
+    }
+    emptyExtraTubes() {
+    }
+    randomInt(max) {
         return Math.floor(Math.random() * max);
-    };
-    GameState.prototype.moveBall = function (move) {
+    }
+    moveBall(move) {
         var color = this.tubes[move.from].removeBall();
         this.tubes[move.to].addBall(color);
-    };
-    GameState.prototype.moveBallAndLog = function (move) {
+    }
+    moveBallAndLog(move) {
         if (move.to != move.from) {
             this.moveBall(move);
             this.moveLog.push(move);
         }
-    };
-    GameState.prototype.undoLastMove = function () {
+    }
+    undoLastMove() {
         var forwardMove = this.moveLog.pop();
         if (forwardMove == undefined) {
             throw new Error("No move in move log to be undone!");
@@ -190,8 +190,8 @@ var GameState = (function () {
         var backwardMove = forwardMove.backwards();
         this.moveBall(backwardMove);
         return backwardMove;
-    };
-    GameState.prototype.isMoveAllowed = function (from, to) {
+    }
+    isMoveAllowed(from, to) {
         if (this.tubes[from].isEmpty()) {
             return false;
         }
@@ -205,48 +205,47 @@ var GameState = (function () {
             return true;
         }
         return false;
-    };
-    GameState.prototype.isSameColor = function (index1, index2) {
+    }
+    isSameColor(index1, index2) {
         var color1 = this.tubes[index1].colorOfHighestBall();
         var color2 = this.tubes[index2].colorOfHighestBall();
         return color1 == color2;
-    };
-    return GameState;
-}());
-var Tube = (function () {
-    function Tube(tubeHeight) {
+    }
+}
+class Tube {
+    constructor(tubeHeight) {
         this.tubeHeight = tubeHeight;
         this.cells = new Array(tubeHeight);
         this.fillLevel = 0;
     }
-    Tube.prototype.fillWithOneColor = function (initialColor) {
-        for (var i = 0; i < this.tubeHeight; i++) {
+    fillWithOneColor(initialColor) {
+        for (let i = 0; i < this.tubeHeight; i++) {
             this.cells[i] = initialColor;
         }
         this.fillLevel = initialColor == 0 ? 0 : this.tubeHeight;
-    };
-    Tube.prototype.clone = function () {
+    }
+    clone() {
         var miniMe = new Tube(this.tubeHeight);
-        for (var i = 0; i < this.tubeHeight; i++) {
+        for (let i = 0; i < this.tubeHeight; i++) {
             miniMe.cells[i] = this.cells[i];
         }
         miniMe.fillLevel = this.fillLevel;
         return miniMe;
-    };
-    Tube.prototype.isFull = function () {
+    }
+    isFull() {
         return this.fillLevel == this.tubeHeight;
-    };
-    Tube.prototype.isEmpty = function () {
+    }
+    isEmpty() {
         return this.fillLevel == 0;
-    };
-    Tube.prototype.addBall = function (color) {
+    }
+    addBall(color) {
         if (this.isFull()) {
             throw 'tube is already full';
         }
         this.cells[this.fillLevel] = color;
         this.fillLevel++;
-    };
-    Tube.prototype.removeBall = function () {
+    }
+    removeBall() {
         if (this.isEmpty()) {
             throw 'tube is already empty';
         }
@@ -254,15 +253,15 @@ var Tube = (function () {
         var color = this.cells[this.fillLevel];
         this.cells[this.fillLevel] = 0;
         return color;
-    };
-    Tube.prototype.colorOfHighestBall = function () {
+    }
+    colorOfHighestBall() {
         var color = this.cells[this.fillLevel - 1];
         return color;
-    };
-    Tube.prototype.colorOfSecondHighestBall = function () {
+    }
+    colorOfSecondHighestBall() {
         return this.cells[this.fillLevel - 2];
-    };
-    Tube.prototype.isReverseDonorCandidate = function () {
+    }
+    isReverseDonorCandidate() {
         if (this.isEmpty()) {
             return false;
         }
@@ -273,11 +272,11 @@ var Tube = (function () {
             return true;
         }
         return false;
-    };
-    Tube.prototype.isReverseReceiverCandidate = function () {
+    }
+    isReverseReceiverCandidate() {
         return !(this.isFull());
-    };
-    Tube.prototype.unicolor = function () {
+    }
+    unicolor() {
         if (this.isEmpty()) {
             return 0;
         }
@@ -292,8 +291,8 @@ var Tube = (function () {
             }
         }
         return i;
-    };
-    Tube.prototype.isSolved = function () {
+    }
+    isSolved() {
         if (!this.isFull()) {
             return false;
         }
@@ -304,23 +303,21 @@ var Tube = (function () {
             }
         }
         return true;
-    };
-    return Tube;
-}());
-var Move = (function () {
-    function Move(from, to) {
+    }
+}
+class Move {
+    constructor(from, to) {
         this.from = from;
         this.to = to;
     }
-    Move.prototype.backwards = function () {
+    backwards() {
         var retro = new Move(this.to, this.from);
         return retro;
-    };
-    Move.prototype.isEqual = function (otherMove) {
+    }
+    isEqual(otherMove) {
         if (otherMove == null) {
             return false;
         }
         return (this.from == otherMove.from) && (this.to == otherMove.to);
-    };
-    return Move;
-}());
+    }
+}

@@ -26,17 +26,16 @@ let donorRow: number|null = null;
 /**
  * positions of original game board / puzzle without scaling
  */
-let ballRadius = 40;
+const ballRadius = 40;
 //let ballRadiusInside = ballRadius; 
-let ballRadiusInside = ballRadius - 0.5;
-let ballDiameter = ballRadius * 2;
-let ballPadding = 4;
-let tubeWidth = ballDiameter + ballPadding * 2;
-let tubeLowerCornerRadius = 26;
-let tubePadding = 8;
-let bounce = 20;
-
-let svgNS = 'http://www.w3.org/2000/svg';
+const ballRadiusInside = ballRadius - 0.5;
+const ballDiameter = ballRadius * 2;
+const ballPadding = 4;
+const tubeWidth = ballDiameter + ballPadding * 2;
+const tubeLowerCornerRadius = 26;
+const tubePadding = 8;
+const bounce = 20;
+const svgNS = 'http://www.w3.org/2000/svg';
 
 /**
  * remove an HTMLElement from the DOM (if possible)

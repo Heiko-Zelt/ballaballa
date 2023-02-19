@@ -1,17 +1,17 @@
 "use strict";
-var originalGameState = null;
-var gameState = null;
-var donorIndex = null;
-var donorRow = null;
-var ballRadius = 40;
-var ballRadiusInside = ballRadius - 0.5;
-var ballDiameter = ballRadius * 2;
-var ballPadding = 4;
-var tubeWidth = ballDiameter + ballPadding * 2;
-var tubeLowerCornerRadius = 26;
-var tubePadding = 8;
-var bounce = 20;
-var svgNS = 'http://www.w3.org/2000/svg';
+let originalGameState = null;
+let gameState = null;
+let donorIndex = null;
+let donorRow = null;
+const ballRadius = 40;
+const ballRadiusInside = ballRadius - 0.5;
+const ballDiameter = ballRadius * 2;
+const ballPadding = 4;
+const tubeWidth = ballDiameter + ballPadding * 2;
+const tubeLowerCornerRadius = 26;
+const tubePadding = 8;
+const bounce = 20;
+const svgNS = 'http://www.w3.org/2000/svg';
 function removeElement(element) {
     if (element != null) {
         var parent = element.parentNode;
@@ -72,10 +72,10 @@ function liftBall(from) {
     donorIndex = from;
     donorRow = gameState.tubes[from].fillLevel - 1;
     removeBall(donorIndex, donorRow);
-    var fromText = "  from {\n    cy: " + ballY(donorRow) + "px; \n  }";
-    var toText = "  to {\n    cy: " + ballRadius + "px; \n  }";
-    var keyframes = "@keyframes liftBallAnimation {\n" + fromText + "\n" + toText + "\n}";
-    var styleText = keyframes + "\n";
+    var fromText = `  from \{\n    cy: ${ballY(donorRow)}px; \n  \}`;
+    var toText = `  to \{\n    cy: ${ballRadius}px; \n  \}`;
+    var keyframes = `@keyframes liftBallAnimation \{\n${fromText}\n${toText}\n\}`;
+    var styleText = `${keyframes}\n`;
     var styleElement = document.getElementById('liftStyle');
     if (styleElement == null)
         throw new Error('styleElement is null');
@@ -98,14 +98,14 @@ function liftAndHoleBall(move) {
     var fromRow = gameState.tubes[move.from].fillLevel;
     var toRow = gameState.tubes[move.to].fillLevel - 1;
     removeBall(move.from, fromRow);
-    var fromText = "  0% {cx: " + ballX(move.from) + "px; cy: " + ballY(fromRow) + "px;}";
-    var betweenText1 = "  26% {cx: " + ballX(move.from) + "px; cy: " + ballRadius + "px;}";
-    var betweenText2 = "  53% {cx: " + ballX(move.to) + "px; cy: " + ballRadius + "px;}";
-    var toText = "  80% {cx: " + ballX(move.to) + "px; cy: " + ballY(toRow) + "px;}";
-    var bounceText = "  90% {cy: " + (ballY(toRow) - bounce) + "px;}";
-    var backText = "  100% {cy: " + ballY(toRow) + "px;}";
-    var keyframes = "@keyframes undoBallKeyframes {\n" + fromText + "\n" + betweenText1 + "\n" + betweenText2 + "\n" + toText + "\n" + bounceText + "\n" + backText + "\n}";
-    var styleText = keyframes + "\n";
+    var fromText = `  0% \{cx: ${ballX(move.from)}px; cy: ${ballY(fromRow)}px;\}`;
+    var betweenText1 = `  26% \{cx: ${ballX(move.from)}px; cy: ${ballRadius}px;\}`;
+    var betweenText2 = `  53% \{cx: ${ballX(move.to)}px; cy: ${ballRadius}px;\}`;
+    var toText = `  80% \{cx: ${ballX(move.to)}px; cy: ${ballY(toRow)}px;\}`;
+    var bounceText = `  90% \{cy: ${ballY(toRow) - bounce}px;\}`;
+    var backText = `  100% \{cy: ${ballY(toRow)}px;\}`;
+    var keyframes = `@keyframes undoBallKeyframes \{\n${fromText}\n${betweenText1}\n${betweenText2}\n${toText}\n${bounceText}\n${backText}\n\}`;
+    var styleText = `${keyframes}\n`;
     var styleElement = document.getElementById('undoStyle');
     if (styleElement == null)
         throw new Error('undoElement is null');
@@ -142,12 +142,12 @@ function dropBall() {
     if (donorRow == null)
         throw new Error('donorRow is null');
     removeLiftedBall();
-    var fromText = "  0% {cy: " + ballRadius + "px;}";
-    var toText = "  80% {cy: " + ballY(donorRow) + "px;}";
-    var bounceText = "  90% {cy: " + (ballY(donorRow) - bounce) + "px;}";
-    var backText = "  100% {cy: " + ballY(donorRow) + "px;}";
-    var keyframes = "@keyframes dropBallKeyframes {\n" + fromText + "\n" + toText + "\n" + bounceText + "\n" + backText + "\n}";
-    var styleText = keyframes + "\n";
+    var fromText = `  0% \{cy: ${ballRadius}px;\}`;
+    var toText = `  80% \{cy: ${ballY(donorRow)}px;\}`;
+    var bounceText = `  90% \{cy: ${ballY(donorRow) - bounce}px;\}`;
+    var backText = `  100% \{cy: ${ballY(donorRow)}px;\}`;
+    var keyframes = `@keyframes dropBallKeyframes \{\n${fromText}\n${toText}\n${bounceText}\n${backText}\n\}`;
+    var styleText = `${keyframes}\n`;
     var styleElement = document.getElementById('dropStyle');
     if (styleElement == null)
         throw new Error('styleElement is null');
@@ -179,13 +179,13 @@ function holeBall(to) {
     var distance1 = gameState.tubeHeight - toRow;
     var fract = distance0 / (distance0 + distance1);
     var percent = fract * 80;
-    var fromText = "  0% {cx: " + ballX(donorIndex) + "px; cy: " + ballRadius + "px;}";
-    var betweenText = "  " + percent + "% {cx: " + ballX(to) + "px; cy: " + ballRadius + "px;}";
-    var toText = "  80% {cy: " + ballY(toRow) + "px;}";
-    var bounceText = "  90% {cy: " + (ballY(toRow) - bounce) + "px;}";
-    var backText = "  100% {cy: " + ballY(toRow) + "px;}";
-    var keyframes = "@keyframes holeBallKeyframes {\n" + fromText + "\n" + betweenText + "\n" + toText + "\n" + bounceText + "\n" + backText + "\n}";
-    var styleText = keyframes + "\n";
+    var fromText = `  0% \{cx: ${ballX(donorIndex)}px; cy: ${ballRadius}px;\}`;
+    var betweenText = `  ${percent}% \{cx: ${ballX(to)}px; cy: ${ballRadius}px;\}`;
+    var toText = `  80% \{cy: ${ballY(toRow)}px;\}`;
+    var bounceText = `  90% \{cy: ${ballY(toRow) - bounce}px;\}`;
+    var backText = `  100% \{cy: ${ballY(toRow)}px;\}`;
+    var keyframes = `@keyframes holeBallKeyframes \{\n${fromText}\n${betweenText}\n${toText}\n${bounceText}\n${backText}\n\}`;
+    var styleText = `${keyframes}\n`;
     var styleElement = document.getElementById('holeStyle');
     if (styleElement == null)
         throw new Error('donorIndex is null');
@@ -243,7 +243,7 @@ function ballY(row) {
     return (gameState.tubeHeight - row) * ballDiameter + ballRadius;
 }
 function ballId(col, row) {
-    return "ball_" + col + "_" + row;
+    return `ball_${col}_${row}`;
 }
 function createBall(col, row) {
     if (gameState == null)
@@ -277,11 +277,11 @@ function createLiftedBall(from) {
 function createTube(col) {
     var tubePath = document.createElementNS(svgNS, 'path');
     var left = col * (tubeWidth + tubePadding);
-    var upperLeft = left + "," + ballDiameter;
+    var upperLeft = `${left},${ballDiameter}`;
     var verticalHeight = tubeHeight() - tubeLowerCornerRadius;
-    var archLeft = "a" + tubeLowerCornerRadius + "," + tubeLowerCornerRadius + " 0 0 0 " + tubeLowerCornerRadius + "," + tubeLowerCornerRadius;
-    var archRight = "a" + tubeLowerCornerRadius + "," + tubeLowerCornerRadius + " 0 0 0 " + tubeLowerCornerRadius + "," + tubeLowerCornerRadius * -1;
-    var path = "M" + upperLeft + " v" + verticalHeight + " " + archLeft + " h" + (tubeWidth - tubeLowerCornerRadius * 2) + " " + archRight + " v" + verticalHeight * -1 + " z";
+    var archLeft = `a${tubeLowerCornerRadius},${tubeLowerCornerRadius} 0 0 0 ${tubeLowerCornerRadius},${tubeLowerCornerRadius}`;
+    var archRight = `a${tubeLowerCornerRadius},${tubeLowerCornerRadius} 0 0 0 ${tubeLowerCornerRadius},${tubeLowerCornerRadius * -1}`;
+    var path = `M${upperLeft} v${verticalHeight} ${archLeft} h${tubeWidth - tubeLowerCornerRadius * 2} ${archRight} v${verticalHeight * -1} z`;
     tubePath.setAttributeNS(null, 'd', path);
     tubePath.classList.add('tube');
     return tubePath;
@@ -295,7 +295,7 @@ function createBoundingBox(col) {
     tubeBoundingBox.setAttribute('height', (tubeHeight() + ballDiameter).toString());
     tubeBoundingBox.id = 'tubeBoundingBox_' + col;
     tubeBoundingBox.classList.add('tubeBoundingBox');
-    tubeBoundingBox.addEventListener('click', function (event) {
+    tubeBoundingBox.addEventListener('click', (event) => {
         if (event.target == null)
             throw new Error('event.target is null');
         var clickedCol = parseInt(event.target.id.split('_')[1]);
@@ -364,7 +364,7 @@ function scaleBoard() {
     var newBoardHeight = boardHeight() * scalingFactor;
     svg.setAttributeNS(null, 'height', newBoardHeight.toString());
     svg.setAttributeNS(null, 'width', newBoardWidth.toString());
-    puzzleGroup.setAttributeNS(null, 'transform', "scale(" + scalingFactor + ")");
+    puzzleGroup.setAttributeNS(null, 'transform', `scale(${scalingFactor})`);
 }
 document.addEventListener('DOMContentLoaded', function () {
     console.info('document loaded');
