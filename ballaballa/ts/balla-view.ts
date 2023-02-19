@@ -1,3 +1,5 @@
+import { GameState, Move } from "./balla-model.js";
+
 /**
  * View / User-Interface
  */
@@ -119,10 +121,11 @@ function undoMove(move: Move): void {
   }
 }
 
-
+/*
 function randomIdentifier(): string {
   return 'r' + Math.random().toString(36).substring(2, 15)
 }
+*/
 
 /**
  * from gibt die Spalte an
@@ -431,8 +434,9 @@ function createBall(col: number, row: number): Element {
   ball.setAttributeNS(null, 'cy', ballY(row).toString());
   ball.setAttributeNS(null, 'r', ballRadiusInside.toString());
   ball.id = ballId(col, row);
-  var tube = gameState.tubes[col];
-  var className = 'ball' + tube.cells[row]; // color
+  //var tube = gameState.tubes[col];
+  //var className = 'ball' + tube.cells[row]; // color
+  var className = 'ball' + gameState.getColorAt(col, row);
   //console.debug('className: ', className)
   ball.classList.add(className);
   ball.classList.add('balla');

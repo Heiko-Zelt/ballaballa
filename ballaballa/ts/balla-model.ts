@@ -1,31 +1,56 @@
 /**
  * model / state of the game
  */ 
-class GameState {
-  numberOfColors: number;
-  numberOfExtraTubes: number;
-  tubeHeight: number;
-  numberOfTubes: number;
-  tubes: Tube[];
-  moveLog: Move[];
+export class GameState {
+  private _numberOfTubes: number;
+  private _tubes: Tube[];
+  private _moveLog: Move[];
+  
+  get numberOfColors(): number {
+    return this._numberOfColors;
+  }
+  
+  get numberOfExtraTubes(): number {
+    return this._numberOfExtraTubes;
+  }
+  
+  get tubeHeight(): number {
+    return this._tubeHeight;
+  }
+  
+  get numberOfTubes(): number {
+    return this._numberOfTubes;
+  }
+  
+  get tubes(): Tube[] {
+    return this._tubes;
+  }
+  
+  get moveLog(): Move[] {
+    return this._moveLog;
+  }
 
-  constructor(numberOfColors: number, numberOfExtraTubes: number, tubeHeight: number) {
-    console.debug('GameState.constructor(numberOfColors=' + numberOfColors + ', numberOfExtraTubes=' + numberOfExtraTubes + ', tubeHeight=' + tubeHeight +')');
-    this.numberOfColors = numberOfColors;
-    this.numberOfExtraTubes = numberOfExtraTubes;
-    this.tubeHeight = tubeHeight;
-    this.numberOfTubes = this.numberOfColors + this.numberOfExtraTubes;
-    this.tubes = new Array(this.numberOfTubes);
-    this.moveLog = [];
+  constructor(private _numberOfColors: number, private _numberOfExtraTubes: number, private _tubeHeight: number) {
+    console.debug('GameState.constructor(numberOfColors=' + _numberOfColors + ', numberOfExtraTubes=' + _numberOfExtraTubes + ', tubeHeight=' + _tubeHeight +')');
+    //this.numberOfColors = numberOfColors;
+    //this.numberOfExtraTubes = numberOfExtraTubes;
+    //this.tubeHeight = tubeHeight;
+    this._numberOfTubes = _numberOfColors + this._numberOfExtraTubes;
+    this._tubes = new Array(this._numberOfTubes);
+    this._moveLog = [];
+  }
+  
+  getColorAt(col: number, row: number): number {
+    return this._tubes[col].getColorAt(row);
   }
   
   clone(): GameState {
     console.debug('GameState.clone()');
-    var miniMe = new GameState(this.numberOfColors, this.numberOfExtraTubes, this.tubeHeight);
-    for(var i = 0; i < this.numberOfTubes; i++) {
-      miniMe.tubes[i] = this.tubes[i].clone();
+    var miniMe = new GameState(this._numberOfColors, this._numberOfExtraTubes, this._tubeHeight);
+    for(var i = 0; i < this._numberOfTubes; i++) {
+      miniMe._tubes[i] = this._tubes[i].clone();
     }
-    miniMe.moveLog = this.moveLog;
+    miniMe._moveLog = this._moveLog;
     return miniMe;
   }
   
@@ -42,11 +67,11 @@ class GameState {
    * which makes solving the puzzle much easier
    */
   cheat(): void {
-    var n = new Tube(this.tubeHeight);
+    var n = new Tube(this._tubeHeight);
     n.fillWithOneColor(0);
-    this.tubes.push(n);
-    this.numberOfTubes++;
-    this.numberOfExtraTubes++;
+    this._tubes.push(n);
+    this._numberOfTubes++;
+    this._numberOfExtraTubes++;
   }
 
   /**
@@ -54,9 +79,9 @@ class GameState {
     * also jede Röhren entweder leer oder gelöst ist.
     */
   isSolved(): boolean {
-	for(var i = 0; i < this.numberOfTubes; i++) {
+	for(var i = 0; i < this._numberOfTubes; i++) {
       //console.debug('i=' + i);
-	  if(!(this.tubes[i].isEmpty() || this.tubes[i].isSolved())) {
+	  if(!(this._tubes[i].isEmpty() || this._tubes[i].isSolved())) {
 		//console.debug('tube ' + i + ' is not empty or solved');
         return false;
       }
@@ -69,19 +94,19 @@ class GameState {
   initTubes(): void {
     console.debug('initTubes()');
     // gefüllte Röhren
-    for(var i = 0; i < this.numberOfColors; i++) {
+    for(var i = 0; i < this._numberOfColors; i++) {
       // Roehre mit Index 0 hat Farbe 1, etc...
       var initialColor = i + 1;
       //console.debug('initialColor: ' + initialColor)
-      this.tubes[i] = new Tube(this.tubeHeight);
-      this.tubes[i].fillWithOneColor(initialColor);
+      this._tubes[i] = new Tube(this._tubeHeight);
+      this._tubes[i].fillWithOneColor(initialColor);
     }
     // leere Röhren
-    for(var i = this.numberOfColors; i < this.numberOfTubes; i++) {
+    for(var i = this._numberOfColors; i < this._numberOfTubes; i++) {
       // keine Farbe
       //console.debug('initialColor: 0')
-      this.tubes[i] = new Tube(this.tubeHeight);
-      this.tubes[i].fillWithOneColor(0);
+      this._tubes[i] = new Tube(this._tubeHeight);
+      this._tubes[i].fillWithOneColor(0);
     }
   }
   
@@ -90,9 +115,9 @@ class GameState {
    */
   mixTubes(): void {
     console.debug('mixTubes()')
-    for(var c = 0; c < this.numberOfTubes * 3; c++) {
-      var i = this.randomInt(this.numberOfTubes);
-      var j = this.randomInt(this.numberOfTubes);
+    for(var c = 0; c < this._numberOfTubes * 3; c++) {
+      var i = this.randomInt(this._numberOfTubes);
+      var j = this.randomInt(this._numberOfTubes);
       this.swapTubes(i, j);
     }  
   }
@@ -101,9 +126,9 @@ class GameState {
    * tauscht 2 Röhren
    */
   swapTubes(index1: number, index2: number): void {
-    var tmp = this.tubes[index1];
-    this.tubes[index1] = this.tubes[index2];
-    this.tubes[index2] = tmp;
+    var tmp = this._tubes[index1];
+    this._tubes[index1] = this._tubes[index2];
+    this._tubes[index2] = tmp;
   }
   
   /**
@@ -120,7 +145,7 @@ class GameState {
      * einer (oder mehreren) Röhre mit oberstem Ball in gleicher Farbe geht endlos.
      */
     //while(true) {
-    var maxMoves = this.numberOfTubes * this.tubeHeight;
+    var maxMoves = this._numberOfTubes * this._tubeHeight;
     var i;
     for(i = 0; i < maxMoves; i++) { 
       var rdcs = this.reverseDonorCandidates();
@@ -140,8 +165,8 @@ class GameState {
    * plays game backwards with many moves
    */
   randomizeBallsMany(): void {
-	var lastMove = null;
-    var maxMoves = this.numberOfTubes * this.tubeHeight * 3;
+    var lastMove = null;
+    var maxMoves = this._numberOfTubes * this._tubeHeight * 3;
     var i;
     for(i = 0; i < maxMoves; i++) {
       var possibleMoves = this.allPossibleBackwardMoves(lastMove);
@@ -169,10 +194,10 @@ class GameState {
    */
   allPossibleBackwardMoves(lastMove: Move): Move[] {
     var allMoves = [];
-    for(var from = 0; from < this.numberOfTubes; from++) {
-      if(this.tubes[from].isReverseDonorCandidate()) {
-        for(var to = 0; to < this.numberOfTubes; to++) {
-          if(this.tubes[to].isReverseReceiverCandidate()) {
+    for(var from = 0; from < this._numberOfTubes; from++) {
+      if(this._tubes[from].isReverseDonorCandidate()) {
+        for(var to = 0; to < this._numberOfTubes; to++) {
+          if(this._tubes[to].isReverseReceiverCandidate()) {
             if(from != to) {
 	          var move = new Move(from, to);
               if(!move.backwards().isEqual(lastMove)) {
@@ -220,14 +245,14 @@ class GameState {
     //console.debug('move ' + JSON.stringify(move));
 
     // Zug in leere Röhre
-	if(this.tubes[move.to].isEmpty()) {
-	  //console.debug('Zug in leere Röhre');
+    if(this._tubes[move.to].isEmpty()) {
+      //console.debug('Zug in leere Röhre');
       return 50;
     }
 
     // Zug auf gleichfarbigen Ball
-    var ballColor = this.tubes[move.from].colorOfHighestBall();
-    var targetColor = this.tubes[move.to].colorOfHighestBall();
+    var ballColor = this._tubes[move.from].colorOfHighestBall();
+    var targetColor = this._tubes[move.to].colorOfHighestBall();
     // console.debug('ballColor ' + ballColor + '== targetColor ' + targetColor + '?');
     if(targetColor == ballColor) {
       //console.debug('Zug auf gleichfarbigen Ball');
@@ -235,10 +260,10 @@ class GameState {
     }
 
     // Zug auf einfarbige Säule anderer Farbe (weitere Unterteilung nach Höhe der Säule)
-    var n = this.tubes[move.to].unicolor();
+    var n = this._tubes[move.to].unicolor();
     //console.debug('unicolor: ' + n);
     if(n > 1) {
-	  var points = this.tubeHeight - n - 1;
+	  var points = this._tubeHeight - n - 1;
 	  //console.debug('Zug auf einfarbige Säule anderer Farbe :-( Punkte: ' + points);
       return points;
     }
@@ -288,9 +313,9 @@ class GameState {
   reverseReceiverCandidates(): number[] {
     var a = [];
     //console.debug('this.numberOfTubes=' + this.numberOfTubes)
-    for(var i = 0; i < this.numberOfTubes; i++) {
+    for(var i = 0; i < this._numberOfTubes; i++) {
       //console.debug('reverse receiver candidate?' + i)
-      if(this.tubes[i].isReverseReceiverCandidate()) {
+      if(this._tubes[i].isReverseReceiverCandidate()) {
         a.push(i);
       }
     }
@@ -305,9 +330,9 @@ class GameState {
   reverseDonorCandidates(): number[] {
     var a = [];
     //console.debug('this.numberOfTubes=' + this.numberOfTubes)
-    for(var i = 0; i < this.numberOfTubes; i++) {
+    for(var i = 0; i < this._numberOfTubes; i++) {
       //console.debug('reverse donor candidate?' + i)
-      if(this.tubes[i].isReverseDonorCandidate()) {
+      if(this._tubes[i].isReverseDonorCandidate()) {
         a.push(i);
       }
     }
@@ -332,8 +357,8 @@ class GameState {
    */  
   moveBall(move: Move): void {
     //console.debug('moveBall(' + JSON.stringify(move) + ')');
-    var color = this.tubes[move.from].removeBall();
-    this.tubes[move.to].addBall(color);
+    var color = this._tubes[move.from].removeBall();
+    this._tubes[move.to].addBall(color);
   }
   
   /**
@@ -344,7 +369,7 @@ class GameState {
     // wenn Quelle zu Ziel gleich sind. 
     if(move.to != move.from) {
       this.moveBall(move);
-      this.moveLog.push(move);
+      this._moveLog.push(move);
       //console.debug('moveLog: ' + JSON.stringify(this.moveLog));
     }
   }
@@ -353,7 +378,7 @@ class GameState {
    * undoes last move, according to log
    */
   undoLastMove(): Move {
-    var forwardMove: Move|undefined = this.moveLog.pop();
+    var forwardMove: Move|undefined = this._moveLog.pop();
     if(forwardMove == undefined) {
       throw new Error("No move in move log to be undone!")
     }
@@ -365,7 +390,7 @@ class GameState {
   // kompliziertes Regelwerk
   isMoveAllowed(from: number, to: number): boolean {
     // kann keinen Ball aus leerer Röhre nehmen
-    if(this.tubes[from].isEmpty()) {
+    if(this._tubes[from].isEmpty()) {
       return false;
     }
     // sonst geht's immer, wenn Quelle und Ziel gleich sind 
@@ -373,11 +398,11 @@ class GameState {
       return true;
     }
     // Ziel-Tube ist voll
-    if(this.tubes[to].isFull()) {
+    if(this._tubes[to].isFull()) {
       return false;
     }
     // oberster Ball hat selbe Farbe oder Ziel-Röhre ist leer
-    if(this.isSameColor(from, to) || this.tubes[to].isEmpty()) {
+    if(this.isSameColor(from, to) || this._tubes[to].isEmpty()) {
       return true;
     }
     return false; 
@@ -387,79 +412,86 @@ class GameState {
    * Testet, ob die beiden oberen Kugeln, die gleiche Farbe haben.
    */
   isSameColor(index1: number, index2: number): boolean {
-    var color1 = this.tubes[index1].colorOfHighestBall();
-    var color2 = this.tubes[index2].colorOfHighestBall();
+    var color1 = this._tubes[index1].colorOfHighestBall();
+    var color2 = this._tubes[index2].colorOfHighestBall();
     return color1 == color2;
   }
 
 }
 
-class Tube {
-  tubeHeight: number;
-  cells: number[];
-  fillLevel: number;
+export class Tube {
+  private _cells: number[];
+  private _fillLevel: number;
+  
+  get fillLevel(): number {
+    return this._fillLevel;
+  }
 
-  constructor(tubeHeight: number) {
-    this.tubeHeight = tubeHeight;
-    this.cells = new Array(tubeHeight);
-    this.fillLevel = 0;
+  constructor(private _tubeHeight: number) {
+    //this.tubeHeight = tubeHeight;
+    this._cells = new Array(_tubeHeight);
+    this._fillLevel = 0;
+  }
+  
+  getColorAt(row: number): number {
+    return this._cells[row];
   }
   
   fillWithOneColor(initialColor: number): void {
-    for(let i = 0; i < this.tubeHeight; i++) {
+    for(let i = 0; i < this._tubeHeight; i++) {
       /*
        * 0 bedeutet, das Feld ist leer
        * andere Zahlen sind Index im Farb-Array 
        */
-      this.cells[i] = initialColor;
+      this._cells[i] = initialColor;
     }
-    this.fillLevel = initialColor == 0?0:this.tubeHeight;  
+    this._fillLevel = initialColor == 0?0:this._tubeHeight;
   }
   
   clone(): Tube {
-    var miniMe = new Tube(this.tubeHeight);
-    for(let i = 0; i < this.tubeHeight; i++) {
-      miniMe.cells[i] = this.cells[i];
+    var miniMe = new Tube(this._tubeHeight);
+    for(let i = 0; i < this._tubeHeight; i++) {
+      miniMe._cells[i] = this._cells[i];
     }
-    miniMe.fillLevel = this.fillLevel;
+    miniMe._fillLevel = this._fillLevel;
     return miniMe;
   }
   
   isFull(): boolean {
-    return this.fillLevel == this.tubeHeight;
+    return this._fillLevel == this._tubeHeight;
   }
   
   isEmpty(): boolean {
-    return this.fillLevel == 0;
+    return this._fillLevel == 0;
   }
   
   addBall(color: number): void {
     if(this.isFull()) {
       throw 'tube is already full';
     }
-    this.cells[this.fillLevel] = color;
-    this.fillLevel++;
+    this._cells[this._fillLevel] = color;
+    this._fillLevel++;
   }
   
   removeBall(): number {
     if(this.isEmpty()) {
       throw 'tube is already empty';
     }
-    this.fillLevel--;
-    var color = this.cells[this.fillLevel];
+    this._fillLevel--;
+    var color = this._cells[this._fillLevel];
     // 0 ist die Farbe für leere Zelle
-    this.cells[this.fillLevel] = 0;
+    this._cells[this._fillLevel] = 0;
     return color;
   }
   
   colorOfHighestBall(): number {
-    var color = this.cells[this.fillLevel - 1];
+    var color = this._cells[this._fillLevel - 1];
     //console.debug('fillLevel: ' + this.fillLevel + ', color of highest ball:' + color)
     return color;
   }
   
   colorOfSecondHighestBall(): number {
-    return this.cells[this.fillLevel - 2];
+    return this._cells[this._fillLevel - 2];
   }
   
   /**
@@ -472,7 +504,7 @@ class Tube {
       return false;
     }
     // vorwärts gedacht: auf den Boden der leeren Röhre kann immer gezogen werden
-    if(this.fillLevel == 1) {
+    if(this._fillLevel == 1) {
       return true;
     }
     // vorwärts gedacht: Zug auf gleiche Farbe ist erlaubt
@@ -500,14 +532,14 @@ class Tube {
 	   //console.debug('unicolor: Sonderfall leer')
        return 0;
      }
-     if(this.fillLevel == 1) {
+     if(this._fillLevel == 1) {
 	   //console.debug('unicolor: Sonderfall 1')
 	   return 1;
      }
-     var color = this.cells[0];
+     var color = this._cells[0];
      var i;
-     for(i = 1; i < this.fillLevel; i++) {
-       if(this.cells[i] != color) {
+     for(i = 1; i < this._fillLevel; i++) {
+       if(this._cells[i] != color) {
 	     //console.debug('unicolor: unterschiedlich')
          return 0;
        }
@@ -524,9 +556,9 @@ class Tube {
     if(!this.isFull()) {
       return false;
     }
-    var color = this.cells[0]
-    for(var i = 1; i < this.tubeHeight; i++) {
-      if(this.cells[i] != color) {
+    var color = this._cells[0]
+    for(var i = 1; i < this._tubeHeight; i++) {
+      if(this._cells[i] != color) {
 	return false;
       }
     }
@@ -534,17 +566,23 @@ class Tube {
   }
 }
 
-class Move {
-  from: number;
-  to: number;
+export class Move {
+  
+  get from() {
+    return this._from;
+  }
+  
+  get to() {
+    return this._to;
+  }
 
-  constructor(from: number, to: number) {
-    this.from = from;
-    this.to = to;
+  constructor(private _from: number, private _to: number) {
+    //this._from = _from;
+    //this._to = _to;
   }
 
   backwards(): Move {
-    var retro = new Move(this.to, this.from);
+    var retro = new Move(this._to, this._from);
     return retro;
   }
 
@@ -552,6 +590,6 @@ class Move {
     if(otherMove == null) {
       return false;
     }
-    return (this.from == otherMove.from) && (this.to == otherMove.to);
+    return (this._from == otherMove._from) && (this._to == otherMove._to);
   }
 }

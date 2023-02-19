@@ -1,21 +1,41 @@
-"use strict";
-class GameState {
-    constructor(numberOfColors, numberOfExtraTubes, tubeHeight) {
-        console.debug('GameState.constructor(numberOfColors=' + numberOfColors + ', numberOfExtraTubes=' + numberOfExtraTubes + ', tubeHeight=' + tubeHeight + ')');
-        this.numberOfColors = numberOfColors;
-        this.numberOfExtraTubes = numberOfExtraTubes;
-        this.tubeHeight = tubeHeight;
-        this.numberOfTubes = this.numberOfColors + this.numberOfExtraTubes;
-        this.tubes = new Array(this.numberOfTubes);
-        this.moveLog = [];
+export class GameState {
+    constructor(_numberOfColors, _numberOfExtraTubes, _tubeHeight) {
+        this._numberOfColors = _numberOfColors;
+        this._numberOfExtraTubes = _numberOfExtraTubes;
+        this._tubeHeight = _tubeHeight;
+        console.debug('GameState.constructor(numberOfColors=' + _numberOfColors + ', numberOfExtraTubes=' + _numberOfExtraTubes + ', tubeHeight=' + _tubeHeight + ')');
+        this._numberOfTubes = _numberOfColors + this._numberOfExtraTubes;
+        this._tubes = new Array(this._numberOfTubes);
+        this._moveLog = [];
+    }
+    get numberOfColors() {
+        return this._numberOfColors;
+    }
+    get numberOfExtraTubes() {
+        return this._numberOfExtraTubes;
+    }
+    get tubeHeight() {
+        return this._tubeHeight;
+    }
+    get numberOfTubes() {
+        return this._numberOfTubes;
+    }
+    get tubes() {
+        return this._tubes;
+    }
+    get moveLog() {
+        return this._moveLog;
+    }
+    getColorAt(col, row) {
+        return this._tubes[col].getColorAt(row);
     }
     clone() {
         console.debug('GameState.clone()');
-        var miniMe = new GameState(this.numberOfColors, this.numberOfExtraTubes, this.tubeHeight);
-        for (var i = 0; i < this.numberOfTubes; i++) {
-            miniMe.tubes[i] = this.tubes[i].clone();
+        var miniMe = new GameState(this._numberOfColors, this._numberOfExtraTubes, this._tubeHeight);
+        for (var i = 0; i < this._numberOfTubes; i++) {
+            miniMe._tubes[i] = this._tubes[i].clone();
         }
-        miniMe.moveLog = this.moveLog;
+        miniMe._moveLog = this._moveLog;
         return miniMe;
     }
     newGame() {
@@ -25,15 +45,15 @@ class GameState {
         this.mixTubes();
     }
     cheat() {
-        var n = new Tube(this.tubeHeight);
+        var n = new Tube(this._tubeHeight);
         n.fillWithOneColor(0);
-        this.tubes.push(n);
-        this.numberOfTubes++;
-        this.numberOfExtraTubes++;
+        this._tubes.push(n);
+        this._numberOfTubes++;
+        this._numberOfExtraTubes++;
     }
     isSolved() {
-        for (var i = 0; i < this.numberOfTubes; i++) {
-            if (!(this.tubes[i].isEmpty() || this.tubes[i].isSolved())) {
+        for (var i = 0; i < this._numberOfTubes; i++) {
+            if (!(this._tubes[i].isEmpty() || this._tubes[i].isSolved())) {
                 return false;
             }
         }
@@ -41,31 +61,31 @@ class GameState {
     }
     initTubes() {
         console.debug('initTubes()');
-        for (var i = 0; i < this.numberOfColors; i++) {
+        for (var i = 0; i < this._numberOfColors; i++) {
             var initialColor = i + 1;
-            this.tubes[i] = new Tube(this.tubeHeight);
-            this.tubes[i].fillWithOneColor(initialColor);
+            this._tubes[i] = new Tube(this._tubeHeight);
+            this._tubes[i].fillWithOneColor(initialColor);
         }
-        for (var i = this.numberOfColors; i < this.numberOfTubes; i++) {
-            this.tubes[i] = new Tube(this.tubeHeight);
-            this.tubes[i].fillWithOneColor(0);
+        for (var i = this._numberOfColors; i < this._numberOfTubes; i++) {
+            this._tubes[i] = new Tube(this._tubeHeight);
+            this._tubes[i].fillWithOneColor(0);
         }
     }
     mixTubes() {
         console.debug('mixTubes()');
-        for (var c = 0; c < this.numberOfTubes * 3; c++) {
-            var i = this.randomInt(this.numberOfTubes);
-            var j = this.randomInt(this.numberOfTubes);
+        for (var c = 0; c < this._numberOfTubes * 3; c++) {
+            var i = this.randomInt(this._numberOfTubes);
+            var j = this.randomInt(this._numberOfTubes);
             this.swapTubes(i, j);
         }
     }
     swapTubes(index1, index2) {
-        var tmp = this.tubes[index1];
-        this.tubes[index1] = this.tubes[index2];
-        this.tubes[index2] = tmp;
+        var tmp = this._tubes[index1];
+        this._tubes[index1] = this._tubes[index2];
+        this._tubes[index2] = tmp;
     }
     randomizeBalls() {
-        var maxMoves = this.numberOfTubes * this.tubeHeight;
+        var maxMoves = this._numberOfTubes * this._tubeHeight;
         var i;
         for (i = 0; i < maxMoves; i++) {
             var rdcs = this.reverseDonorCandidates();
@@ -81,7 +101,7 @@ class GameState {
     }
     randomizeBallsMany() {
         var lastMove = null;
-        var maxMoves = this.numberOfTubes * this.tubeHeight * 3;
+        var maxMoves = this._numberOfTubes * this._tubeHeight * 3;
         var i;
         for (i = 0; i < maxMoves; i++) {
             var possibleMoves = this.allPossibleBackwardMoves(lastMove);
@@ -99,10 +119,10 @@ class GameState {
     }
     allPossibleBackwardMoves(lastMove) {
         var allMoves = [];
-        for (var from = 0; from < this.numberOfTubes; from++) {
-            if (this.tubes[from].isReverseDonorCandidate()) {
-                for (var to = 0; to < this.numberOfTubes; to++) {
-                    if (this.tubes[to].isReverseReceiverCandidate()) {
+        for (var from = 0; from < this._numberOfTubes; from++) {
+            if (this._tubes[from].isReverseDonorCandidate()) {
+                for (var to = 0; to < this._numberOfTubes; to++) {
+                    if (this._tubes[to].isReverseReceiverCandidate()) {
                         if (from != to) {
                             var move = new Move(from, to);
                             if (!move.backwards().isEqual(lastMove)) {
@@ -130,17 +150,17 @@ class GameState {
         return lots;
     }
     rateBackwardMove(move) {
-        if (this.tubes[move.to].isEmpty()) {
+        if (this._tubes[move.to].isEmpty()) {
             return 50;
         }
-        var ballColor = this.tubes[move.from].colorOfHighestBall();
-        var targetColor = this.tubes[move.to].colorOfHighestBall();
+        var ballColor = this._tubes[move.from].colorOfHighestBall();
+        var targetColor = this._tubes[move.to].colorOfHighestBall();
         if (targetColor == ballColor) {
             return 50;
         }
-        var n = this.tubes[move.to].unicolor();
+        var n = this._tubes[move.to].unicolor();
         if (n > 1) {
-            var points = this.tubeHeight - n - 1;
+            var points = this._tubeHeight - n - 1;
             return points;
         }
         return 40;
@@ -151,8 +171,8 @@ class GameState {
     }
     reverseReceiverCandidates() {
         var a = [];
-        for (var i = 0; i < this.numberOfTubes; i++) {
-            if (this.tubes[i].isReverseReceiverCandidate()) {
+        for (var i = 0; i < this._numberOfTubes; i++) {
+            if (this._tubes[i].isReverseReceiverCandidate()) {
                 a.push(i);
             }
         }
@@ -160,8 +180,8 @@ class GameState {
     }
     reverseDonorCandidates() {
         var a = [];
-        for (var i = 0; i < this.numberOfTubes; i++) {
-            if (this.tubes[i].isReverseDonorCandidate()) {
+        for (var i = 0; i < this._numberOfTubes; i++) {
+            if (this._tubes[i].isReverseDonorCandidate()) {
                 a.push(i);
             }
         }
@@ -173,17 +193,17 @@ class GameState {
         return Math.floor(Math.random() * max);
     }
     moveBall(move) {
-        var color = this.tubes[move.from].removeBall();
-        this.tubes[move.to].addBall(color);
+        var color = this._tubes[move.from].removeBall();
+        this._tubes[move.to].addBall(color);
     }
     moveBallAndLog(move) {
         if (move.to != move.from) {
             this.moveBall(move);
-            this.moveLog.push(move);
+            this._moveLog.push(move);
         }
     }
     undoLastMove() {
-        var forwardMove = this.moveLog.pop();
+        var forwardMove = this._moveLog.pop();
         if (forwardMove == undefined) {
             throw new Error("No move in move log to be undone!");
         }
@@ -192,80 +212,86 @@ class GameState {
         return backwardMove;
     }
     isMoveAllowed(from, to) {
-        if (this.tubes[from].isEmpty()) {
+        if (this._tubes[from].isEmpty()) {
             return false;
         }
         if (to == from) {
             return true;
         }
-        if (this.tubes[to].isFull()) {
+        if (this._tubes[to].isFull()) {
             return false;
         }
-        if (this.isSameColor(from, to) || this.tubes[to].isEmpty()) {
+        if (this.isSameColor(from, to) || this._tubes[to].isEmpty()) {
             return true;
         }
         return false;
     }
     isSameColor(index1, index2) {
-        var color1 = this.tubes[index1].colorOfHighestBall();
-        var color2 = this.tubes[index2].colorOfHighestBall();
+        var color1 = this._tubes[index1].colorOfHighestBall();
+        var color2 = this._tubes[index2].colorOfHighestBall();
         return color1 == color2;
     }
 }
-class Tube {
-    constructor(tubeHeight) {
-        this.tubeHeight = tubeHeight;
-        this.cells = new Array(tubeHeight);
-        this.fillLevel = 0;
+export class Tube {
+    constructor(_tubeHeight) {
+        this._tubeHeight = _tubeHeight;
+        this._cells = new Array(_tubeHeight);
+        this._fillLevel = 0;
+    }
+    get fillLevel() {
+        return this._fillLevel;
+    }
+    getColorAt(row) {
+        return this._cells[row];
     }
     fillWithOneColor(initialColor) {
-        for (let i = 0; i < this.tubeHeight; i++) {
-            this.cells[i] = initialColor;
+        for (let i = 0; i < this._tubeHeight; i++) {
+            this._cells[i] = initialColor;
         }
-        this.fillLevel = initialColor == 0 ? 0 : this.tubeHeight;
+        this._fillLevel = initialColor == 0 ? 0 : this._tubeHeight;
     }
     clone() {
-        var miniMe = new Tube(this.tubeHeight);
-        for (let i = 0; i < this.tubeHeight; i++) {
-            miniMe.cells[i] = this.cells[i];
+        var miniMe = new Tube(this._tubeHeight);
+        for (let i = 0; i < this._tubeHeight; i++) {
+            miniMe._cells[i] = this._cells[i];
         }
-        miniMe.fillLevel = this.fillLevel;
+        miniMe._fillLevel = this._fillLevel;
         return miniMe;
     }
     isFull() {
-        return this.fillLevel == this.tubeHeight;
+        return this._fillLevel == this._tubeHeight;
     }
     isEmpty() {
-        return this.fillLevel == 0;
+        return this._fillLevel == 0;
     }
     addBall(color) {
         if (this.isFull()) {
             throw 'tube is already full';
         }
-        this.cells[this.fillLevel] = color;
-        this.fillLevel++;
+        this._cells[this._fillLevel] = color;
+        this._fillLevel++;
     }
     removeBall() {
         if (this.isEmpty()) {
             throw 'tube is already empty';
         }
-        this.fillLevel--;
-        var color = this.cells[this.fillLevel];
-        this.cells[this.fillLevel] = 0;
+        this._fillLevel--;
+        var color = this._cells[this._fillLevel];
+        this._cells[this._fillLevel] = 0;
         return color;
     }
     colorOfHighestBall() {
-        var color = this.cells[this.fillLevel - 1];
+        var color = this._cells[this._fillLevel - 1];
         return color;
     }
     colorOfSecondHighestBall() {
-        return this.cells[this.fillLevel - 2];
+        return this._cells[this._fillLevel - 2];
     }
     isReverseDonorCandidate() {
         if (this.isEmpty()) {
             return false;
         }
-        if (this.fillLevel == 1) {
+        if (this._fillLevel == 1) {
             return true;
         }
         if (this.colorOfHighestBall() == this.colorOfSecondHighestBall()) {
@@ -280,13 +306,13 @@ class Tube {
         if (this.isEmpty()) {
             return 0;
         }
-        if (this.fillLevel == 1) {
+        if (this._fillLevel == 1) {
             return 1;
         }
-        var color = this.cells[0];
+        var color = this._cells[0];
         var i;
-        for (i = 1; i < this.fillLevel; i++) {
-            if (this.cells[i] != color) {
+        for (i = 1; i < this._fillLevel; i++) {
+            if (this._cells[i] != color) {
                 return 0;
             }
         }
@@ -296,28 +322,34 @@ class Tube {
         if (!this.isFull()) {
             return false;
         }
-        var color = this.cells[0];
-        for (var i = 1; i < this.tubeHeight; i++) {
-            if (this.cells[i] != color) {
+        var color = this._cells[0];
+        for (var i = 1; i < this._tubeHeight; i++) {
+            if (this._cells[i] != color) {
                 return false;
             }
         }
         return true;
     }
 }
-class Move {
-    constructor(from, to) {
-        this.from = from;
-        this.to = to;
+export class Move {
+    constructor(_from, _to) {
+        this._from = _from;
+        this._to = _to;
+    }
+    get from() {
+        return this._from;
+    }
+    get to() {
+        return this._to;
     }
     backwards() {
-        var retro = new Move(this.to, this.from);
+        var retro = new Move(this._to, this._from);
         return retro;
     }
     isEqual(otherMove) {
         if (otherMove == null) {
             return false;
         }
-        return (this.from == otherMove.from) && (this.to == otherMove.to);
+        return (this._from == otherMove._from) && (this._to == otherMove._to);
     }
 }

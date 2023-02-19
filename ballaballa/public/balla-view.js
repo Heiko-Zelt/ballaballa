@@ -1,4 +1,4 @@
-"use strict";
+import { GameState, Move } from "./balla-model.js";
 let originalGameState = null;
 let gameState = null;
 let donorIndex = null;
@@ -62,9 +62,6 @@ function undoMove(move) {
             liftAndHoleBall(move);
         }
     }
-}
-function randomIdentifier() {
-    return 'r' + Math.random().toString(36).substring(2, 15);
 }
 function liftBall(from) {
     if (gameState == null)
@@ -253,8 +250,7 @@ function createBall(col, row) {
     ball.setAttributeNS(null, 'cy', ballY(row).toString());
     ball.setAttributeNS(null, 'r', ballRadiusInside.toString());
     ball.id = ballId(col, row);
-    var tube = gameState.tubes[col];
-    var className = 'ball' + tube.cells[row];
+    var className = 'ball' + gameState.getColorAt(col, row);
     ball.classList.add(className);
     ball.classList.add('balla');
     return ball;
