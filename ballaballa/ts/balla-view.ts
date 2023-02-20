@@ -404,8 +404,6 @@ function clickOnTube(clickedCol: number): void {
       }
     } else {
       //console.debug('Wechsel');
-      // Ball wieder runter
-      //dropBall(donorIndex);
       dropBall();
       // dafür anderer Ball hoch
       liftBall(clickedCol);
